@@ -1,0 +1,372 @@
+{
+  "name": "embedded-workbench",
+  "displayName": "Embedded Workbench（统一嵌入式工作台）",
+  "description": "把任意文件夹变成嵌入式工程目录：多工程/多板卡环境切换、串口扫描与芯片识别、构建烧录、缓存体积、版本锁定体检。",
+  "version": "0.8.0",
+  "publisher": "local-dev",
+  "license": "MIT",
+  "author": "AlexYip1999",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexYip1999/embedded-workbench.git"
+  },
+  "homepage": "https://github.com/AlexYip1999/embedded-workbench#readme",
+  "bugs": {
+    "url": "https://github.com/AlexYip1999/embedded-workbench/issues"
+  },
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#181c27",
+    "theme": "dark"
+  },
+  "keywords": [
+    "embedded",
+    "platformio",
+    "esp8266",
+    "esp32",
+    "stm32",
+    "arduino",
+    "serial",
+    "firmware",
+    "iot"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "需要运行本地 pio 并读写工程目录，请信任工作区后使用。"
+    }
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/platformio.ini",
+    "onView:embeddedEnv.projects",
+    "onView:embeddedEnv.devices",
+    "onView:embeddedEnv.cache",
+    "onView:embeddedEnv.versions",
+    "onCommand:embeddedEnv.bootstrap",
+    "onCommand:embeddedEnv.newProject",
+    "onCommand:embeddedEnv.newProjectForDevice",
+    "onCommand:embeddedEnv.refresh",
+    "onCommand:embeddedEnv.pickActive"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "embeddedEnv",
+          "title": "统一嵌入式",
+          "icon": "media/chip.svg"
+        }
+      ]
+    },
+    "views": {
+      "embeddedEnv": [
+        {
+          "id": "embeddedEnv.projects",
+          "name": "工程"
+        },
+        {
+          "id": "embeddedEnv.devices",
+          "name": "设备"
+        },
+        {
+          "id": "embeddedEnv.cache",
+          "name": "缓存"
+        },
+        {
+          "id": "embeddedEnv.versions",
+          "name": "版本"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "embeddedEnv.projects",
+        "contents": "还没有工程。\n点标题栏的 ＋ 新建工程；首次使用请先运行命令面板「初始化环境（安装 PlatformIO）」。\n[新建工程](command:embeddedEnv.newProject)\n[刷新](command:embeddedEnv.refresh)"
+      },
+      {
+        "view": "embeddedEnv.devices",
+        "contents": "插上开发板后，点右上角刷新扫描串口。\n[扫描串口设备](command:embeddedEnv.focusDevices)"
+      },
+      {
+        "view": "embeddedEnv.cache",
+        "contents": "首次构建后，这里会显示 PlatformIO 缓存、Python 环境和构建产物的体积。\n[计算缓存体积](command:embeddedEnv.computeSizes)"
+      },
+      {
+        "view": "embeddedEnv.versions",
+        "contents": "版本体检会检查 PlatformIO 版本、工程 platform 与 lib_deps 是否锁定。\n[刷新](command:embeddedEnv.refresh)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "embeddedEnv.refresh",
+        "title": "刷新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "embeddedEnv.bootstrap",
+        "title": "初始化环境（安装 PlatformIO）",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "embeddedEnv.refreshDevices",
+        "title": "刷新设备列表",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "embeddedEnv.focusPanel",
+        "title": "打开统一嵌入式面板"
+      },
+      {
+        "command": "embeddedEnv.focusDevices",
+        "title": "扫描串口设备"
+      },
+      {
+        "command": "embeddedEnv.newProject",
+        "title": "新建 PlatformIO 工程",
+        "icon": "$(add)"
+      },
+      {
+        "command": "embeddedEnv.addEnvironment",
+        "title": "添加板卡环境"
+      },
+      {
+        "command": "embeddedEnv.detectChip",
+        "title": "识别芯片（esptool）"
+      },
+      {
+        "command": "embeddedEnv.newProjectForDevice",
+        "title": "用此设备新建工程"
+      },
+      {
+        "command": "embeddedEnv.deleteProject",
+        "title": "删除工程",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "embeddedEnv.computeSizes",
+        "title": "计算缓存体积",
+        "icon": "$(database)"
+      },
+      {
+        "command": "embeddedEnv.build",
+        "title": "构建",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "embeddedEnv.flash",
+        "title": "烧录",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "embeddedEnv.flashToPort",
+        "title": "烧录到此设备"
+      },
+      {
+        "command": "embeddedEnv.monitor",
+        "title": "监视串口",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "embeddedEnv.monitorPort",
+        "title": "监视此串口"
+      },
+      {
+        "command": "embeddedEnv.copyPortName",
+        "title": "复制端口名"
+      },
+      {
+        "command": "embeddedEnv.clean",
+        "title": "清理构建产物",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "embeddedEnv.cleanBuild",
+        "title": "清理该工程构建产物"
+      },
+      {
+        "command": "embeddedEnv.setActiveEnv",
+        "title": "设为当前环境"
+      },
+      {
+        "command": "embeddedEnv.pickActive",
+        "title": "选择当前工程环境"
+      },
+      {
+        "command": "embeddedEnv.openIni",
+        "title": "打开 platformio.ini"
+      },
+      {
+        "command": "embeddedEnv.openPath",
+        "title": "在资源管理器中打开"
+      },
+      {
+        "command": "embeddedEnv.openCheckFile",
+        "title": "打开相关文件"
+      },
+      {
+        "command": "embeddedEnv.checkUpdates",
+        "title": "检查依赖更新"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "embeddedEnv.newProject",
+          "when": "view == embeddedEnv.projects",
+          "group": "navigation@0"
+        },
+        {
+          "command": "embeddedEnv.refresh",
+          "when": "view == embeddedEnv.projects || view == embeddedEnv.cache || view == embeddedEnv.versions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "embeddedEnv.refreshDevices",
+          "when": "view == embeddedEnv.devices",
+          "group": "navigation@1"
+        },
+        {
+          "command": "embeddedEnv.computeSizes",
+          "when": "view == embeddedEnv.cache",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "embeddedEnv.build",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "1_run@1"
+        },
+        {
+          "command": "embeddedEnv.flash",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "1_run@2"
+        },
+        {
+          "command": "embeddedEnv.monitor",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "1_run@3"
+        },
+        {
+          "command": "embeddedEnv.clean",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "2_maint@1"
+        },
+        {
+          "command": "embeddedEnv.deleteProject",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "9_delete@1"
+        },
+        {
+          "command": "embeddedEnv.openIni",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "9_open@1"
+        },
+        {
+          "command": "embeddedEnv.setActiveEnv",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "1_run@1"
+        },
+        {
+          "command": "embeddedEnv.build",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "1_run@2"
+        },
+        {
+          "command": "embeddedEnv.flash",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "1_run@3"
+        },
+        {
+          "command": "embeddedEnv.monitor",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "1_run@4"
+        },
+        {
+          "command": "embeddedEnv.flashToPort",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "1_run@1"
+        },
+        {
+          "command": "embeddedEnv.detectChip",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "1_run@2"
+        },
+        {
+          "command": "embeddedEnv.newProjectForDevice",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "1_run@3"
+        },
+        {
+          "command": "embeddedEnv.monitorPort",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "1_run@2"
+        },
+        {
+          "command": "embeddedEnv.copyPortName",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "9_copy@1"
+        },
+        {
+          "command": "embeddedEnv.cleanBuild",
+          "when": "view == embeddedEnv.cache && viewItem == buildCache",
+          "group": "1_run@1"
+        },
+        {
+          "command": "embeddedEnv.openPath",
+          "when": "view == embeddedEnv.cache && viewItem == cacheItem",
+          "group": "9_open@1"
+        },
+        {
+          "command": "embeddedEnv.openCheckFile",
+          "when": "view == embeddedEnv.versions && viewItem == versionCheck",
+          "group": "9_open@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "统一嵌入式工作台",
+      "properties": {
+        "embeddedEnv.pioPath": {
+          "type": "string",
+          "default": "",
+          "description": "pio 可执行文件路径。留空时自动使用仓库内 .venv/Scripts/pio.exe。"
+        },
+        "embeddedEnv.coreDir": {
+          "type": "string",
+          "default": ".platformio",
+          "description": "PlatformIO 缓存目录（相对仓库根目录或绝对路径）。"
+        },
+        "embeddedEnv.baud": {
+          "type": "number",
+          "default": 115200,
+          "description": "串口监视波特率。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.mjs",
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsc -p tsconfig.json && node out/test/smoke.js",
+    "package": "vsce package --allow-missing-repository --skip-license --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^2.26.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,10 @@
+src/**
+test/**
+out/**
+node_modules/**
+esbuild.mjs
+tsconfig.json
+install.ps1
+**/*.map
+*.vsix
+.gitignore

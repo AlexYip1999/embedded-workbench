@@ -1,0 +1,12 @@
+# build artifacts
+node_modules/
+out/
+dist/
+*.vsix
+*.log
+
+# editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
