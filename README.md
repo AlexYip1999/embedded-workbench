@@ -3,7 +3,7 @@
 把任意文件夹变成嵌入式工程目录：工程、设备、缓存、版本都在这个面板里管理，
 环境（Python + PlatformIO）也由扩展自己创建，不需要脚本或仓库模板。
 
-- **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可打开 `platformio.ini`、删除工程等
+- **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可删除工程、生成调试配置等；`platformio.ini` 用命令面板打开
 - **设备**视图：扫描串口，显示 COM 口、描述、硬件 ID（VID/PID）和 USB 桥接芯片（CH340、CP210x、FTDI…）；右键「识别芯片（esptool）」可读出目标 MCU 型号（如 `ESP8266EX`）、Flash 大小、MAC 地址
 - **缓存**视图：`.platformio/packages`、`platforms`、`.venv`、各工程 `.pio` 的体积
 - **版本**视图：PlatformIO 版本（插件锁定 6.2.0）、platform/lib_deps 是否锁版本
@@ -28,7 +28,7 @@
 | 构建 / 烧录 / 监视串口 / 清理 | 对当前环境或右键的工程/环境执行 |
 | 烧录并监视串口 | 烧录成功后自动在同一终端打开串口监视，直接看启动输出 |
 | 打开源码 | 打开工程入口源码（优先 `src/main.cpp`），单击工程节点即触发 |
-| 打开 platformio.ini | 打开工程配置文件（右键工程/环境） |
+| 打开 platformio.ini | 打开工程配置文件（命令面板） |
 | 调试（Debug，实验性） | ESP32 环境生成 `cppdbg` 调试配置并尝试启动 VS Code 调试；ESP8266 提示不支持 |
 | 生成调试配置（launch.json） | 为所有已构建环境写入调试配置，出现在「运行和调试」下拉框（ESP8266 为占位，连接会失败） |
 | 检查依赖更新 | 对所有工程运行 `pio pkg outdated`，输出到「统一嵌入式」面板 |
