@@ -26,6 +26,7 @@
 | 新建 PlatformIO 工程（标题栏 ＋） | 向导选择平台 → 板卡 → 框架，生成工程并锁定平台版本 |
 | 添加板卡环境 | 给现有工程追加 `[env:*]`，不动已有内容 |
 | 构建 / 烧录 / 监视串口 / 清理 | 对当前环境或右键的工程/环境执行 |
+| 烧录并监视串口 | 烧录成功后自动在同一终端打开串口监视，直接看启动输出 |
 | 检查依赖更新 | 对所有工程运行 `pio pkg outdated`，输出到「统一嵌入式」面板 |
 | 识别芯片（esptool） | 读取串口设备的目标 MCU、Flash 大小、MAC |
 | 用此设备新建工程 | 先识别芯片，再按芯片/Flash 筛选板卡创建工程，可直接构建并烧录 |
@@ -73,7 +74,7 @@ npm run smoke      # 用真实工作区数据跑一遍核心逻辑（含串口�
 ```powershell
 .\install.ps1
 # 等价于：npx @vscode/vsce package --allow-missing-repository --skip-license --no-dependencies
-#         code --install-extension embedded-workbench-0.8.0.vsix --force
+#         code --install-extension embedded-workbench-0.9.0.vsix --force
 ```
 
 装完后在 VS Code 里 `Developer: Reload Window`，左侧活动栏会出现芯片图标。

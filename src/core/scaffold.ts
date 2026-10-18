@@ -287,7 +287,7 @@ export function generateProjectReadme(env: EnvConfig, projectName: string): stri
 
 在 VS Code 左侧「统一嵌入式」→「工程」视图里右键这个工程：
 
-- 构建 / 烧录 / 监视串口 / 清理
+- 构建 / 烧录 / 烧录并监视 / 监视串口 / 清理
 - 切换当前环境
 - 删除工程
 

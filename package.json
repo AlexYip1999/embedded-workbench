@@ -2,7 +2,7 @@
   "name": "embedded-workbench",
   "displayName": "Embedded Workbench（统一嵌入式工作台）",
   "description": "把任意文件夹变成嵌入式工程目录：多工程/多板卡环境切换、串口扫描与芯片识别、构建烧录、缓存体积、版本锁定体检。",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "publisher": "local-dev",
   "license": "MIT",
   "author": "AlexYip1999",
@@ -172,6 +172,11 @@
         "title": "烧录到此设备"
       },
       {
+        "command": "embeddedEnv.flashAndMonitor",
+        "title": "烧录并监视串口",
+        "icon": "$(play)"
+      },
+      {
         "command": "embeddedEnv.monitor",
         "title": "监视串口",
         "icon": "$(plug)"
@@ -179,6 +184,10 @@
       {
         "command": "embeddedEnv.monitorPort",
         "title": "监视此串口"
+      },
+      {
+        "command": "embeddedEnv.flashMonitorPort",
+        "title": "烧录并监视到此设备"
       },
       {
         "command": "embeddedEnv.copyPortName",
@@ -258,6 +267,11 @@
           "group": "1_run@3"
         },
         {
+          "command": "embeddedEnv.flashAndMonitor",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "1_run@4"
+        },
+        {
           "command": "embeddedEnv.clean",
           "when": "view == embeddedEnv.projects && viewItem == project",
           "group": "2_maint@1"
@@ -293,9 +307,19 @@
           "group": "1_run@4"
         },
         {
+          "command": "embeddedEnv.flashAndMonitor",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "1_run@5"
+        },
+        {
           "command": "embeddedEnv.flashToPort",
           "when": "view == embeddedEnv.devices && viewItem == serialDevice",
           "group": "1_run@1"
+        },
+        {
+          "command": "embeddedEnv.flashMonitorPort",
+          "when": "view == embeddedEnv.devices && viewItem == serialDevice",
+          "group": "1_run@1b"
         },
         {
           "command": "embeddedEnv.detectChip",

@@ -35,6 +35,8 @@ interface Target {
   env: EnvModel;
 }
 
+type RunAction = "build" | "flash" | "monitor" | "clean" | "flashMonitor";
+
 const ACTIVE_KEY = "embeddedEnv.active";
 
 let repoRoot: string | undefined;
@@ -135,11 +137,13 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.build", node => runTarget(node, "build"));
   reg("embeddedEnv.flash", node => runTarget(node, "flash"));
   reg("embeddedEnv.flashToPort", node => runTargetToPort(node, "flash"));
+  reg("embeddedEnv.flashAndMonitor", node => runTarget(node, "flashMonitor"));
   reg("embeddedEnv.detectChip", node => detectChipForNode(node));
   reg("embeddedEnv.newProjectForDevice", node => newProjectForDevice(node));
   reg("embeddedEnv.deleteProject", node => deleteProject(node));
   reg("embeddedEnv.monitor", node => runTarget(node, "monitor"));
   reg("embeddedEnv.monitorPort", node => runTargetToPort(node, "monitor"));
+  reg("embeddedEnv.flashMonitorPort", node => runTargetToPort(node, "flashMonitor"));
   reg("embeddedEnv.copyPortName", node => copyPortName(node));
   reg("embeddedEnv.clean", node => runTarget(node, "clean"));
   reg("embeddedEnv.cleanBuild", node => cleanBuild(node));
@@ -320,7 +324,7 @@ async function pickTarget(node?: unknown): Promise<Target | undefined> {
 
 async function runTarget(
   node: unknown,
-  action: "build" | "flash" | "monitor" | "clean",
+  action: RunAction,
   explicitPort?: string
 ): Promise<void> {
   const target = await pickTarget(node);
@@ -330,11 +334,28 @@ async function runTarget(
 
 async function runActionFor(
   target: Target,
-  action: "build" | "flash" | "monitor" | "clean",
+  action: RunAction,
   explicitPort?: string
 ): Promise<void> {
   if (action === "monitor") {
     await startMonitor(target, explicitPort);
+    return;
+  }
+
+  if (action === "flashMonitor") {
+    const port = explicitPort ?? (await pickPort());
+    const baud = vscode.workspace.getConfiguration("embeddedEnv").get<number>("baud", 115200);
+    const uploadArgs = ["run", "-e", target.env.name, "-t", "upload"];
+    if (port) uploadArgs.push("--upload-port", port);
+    const monitorArgs = ["device", "monitor", "-b", String(baud)];
+    if (port) monitorArgs.push("-p", port);
+
+    const term = getBuildTerminal(
+      target.project.dir,
+      `PlatformIO Flash+Monitor · ${target.project.name}`
+    );
+    term.show(true);
+    term.sendText(terminalChain(uploadArgs, monitorArgs), true);
     return;
   }
 
@@ -356,7 +377,10 @@ async function runActionFor(
   term.sendText(terminalCommand(args), true);
 }
 
-async function runTargetToPort(node: unknown, action: "flash" | "monitor"): Promise<void> {
+async function runTargetToPort(
+  node: unknown,
+  action: "flash" | "monitor" | "flashMonitor"
+): Promise<void> {
   if (!(node instanceof SerialDeviceNode)) return;
   await runTarget(undefined, action, node.device.port);
 }
@@ -436,14 +460,36 @@ function getBuildTerminal(cwd: string, title: string): vscode.Terminal {
   return buildTerminal;
 }
 
-function terminalCommand(args: string[]): string {
+function quoteCli(value: string): string {
+  return /[\s"]/.test(value) ? `"${value.replace(/"/g, '\\"')}"` : value;
+}
+
+function pioLine(args: string[]): string {
   if (!pioCtx) return "";
-  const quote = (value: string): string =>
-    /[\s"]/.test(value) ? `"${value.replace(/"/g, '\\"')}"` : value;
-  const line = `"${pioCtx.pioExe}" ${args.map(quote).join(" ")}`;
+  return `"${pioCtx.pioExe}" ${args.map(quoteCli).join(" ")}`;
+}
+
+function isPowerShellShell(): boolean {
   const shell = path.basename(vscode.env.shell || "").toLowerCase();
-  const isPowerShell = shell.includes("powershell") || shell.includes("pwsh");
-  return isPowerShell ? `& ${line}` : line;
+  return shell.includes("powershell") || shell.includes("pwsh");
+}
+
+function terminalCommand(args: string[]): string {
+  const line = pioLine(args);
+  return isPowerShellShell() ? `& ${line}` : line;
+}
+
+/**
+ * Flash first, then open the serial monitor in the same terminal so the boot
+ * output is visible right away. Monitor only starts when the upload succeeded.
+ */
+function terminalChain(uploadArgs: string[], monitorArgs: string[]): string {
+  const upload = terminalCommand(uploadArgs);
+  const monitor = terminalCommand(monitorArgs);
+  if (isPowerShellShell()) {
+    return `${upload} ; if ($LASTEXITCODE -eq 0) { ${monitor} }`;
+  }
+  return `${upload} && ${monitor}`;
 }
 
 async function cleanBuild(node: unknown): Promise<void> {
