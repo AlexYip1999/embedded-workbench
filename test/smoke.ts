@@ -22,7 +22,7 @@ import {
   validateProjectName,
 } from "../src/core/scaffold";
 import { collectLockChecks } from "../src/core/versions";
-import { collectSizeEntries, formatBytes } from "../src/core/sizes";
+import { collectSizeEntries } from "../src/core/sizes";
 import { parseIni, envValue, values } from "../src/core/ini";
 
 function assert(condition: boolean, message: string): void {
@@ -55,52 +55,70 @@ async function main(): Promise<void> {
   );
   assert(envValue(doc, "nodemcuv2", "platform")[0] === "espressif8266", "inherits [env] values");
 
-  console.log("[smoke] repo root + projects");
-  const workspaceRoot = path.resolve(process.cwd(), "..");
-  const root = findRepoRoot([workspaceRoot]);
-  assert(root === workspaceRoot, "uses the opened workspace folder that owns projects/");
-  assert(findRepoRoot([process.cwd()]) === process.cwd(), "never walks up into a parent folder");
-  if (!root) return;
-  console.log(`  root = ${root}`);
-  const projects = scanProjects(root);
-  console.log(
-    `  projects = ${projects.map(p => `${p.name}:${p.envs.map(e => e.name).join("/")}`).join(", ")}`
-  );
-  assert(projects.length > 0, "scans at least one project");
+  console.log("[smoke] repo root + projects (fixture workspace)");
+  const fixtureRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-ws-"));
+  try {
+    const projectDir = path.join(fixtureRoot, "projects", "demo");
+    await fs.promises.mkdir(projectDir, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(projectDir, "platformio.ini"),
+      [
+        "[platformio]",
+        "default_envs = demo",
+        "",
+        "[env:demo]",
+        "platform = espressif8266@4.2.1",
+        "board = nodemcuv2",
+        "framework = arduino",
+        "lib_deps =",
+        "    bodmer/TFT_eSPI@2.5.43",
+      ].join("\n"),
+      "utf8"
+    );
+    const nested = path.join(fixtureRoot, "nested");
+    await fs.promises.mkdir(nested, { recursive: true });
 
-  const env = projects[0].envs[0];
-  assert(!!env?.board, "first env has a board");
+    assert(
+      findRepoRoot([fixtureRoot]) === fixtureRoot,
+      "uses the opened workspace folder that owns projects/"
+    );
+    assert(findRepoRoot([nested]) === nested, "never walks up into a parent folder");
 
-  console.log("[smoke] pio context");
-  const ctx = locatePio(root, "", ".platformio");
-  console.log(`  pio = ${ctx.pioExe}`);
-  console.log(`  core = ${ctx.coreDir}`);
-  assert(fs.existsSync(ctx.pioExe), "pio executable exists");
+    const projects = scanProjects(fixtureRoot);
+    assert(projects.length === 1, "scans projects/");
+    assert(projects[0].name === "demo", "reads project name");
+    assert(projects[0].envs[0]?.board === "nodemcuv2", "reads env board");
 
-  console.log("[smoke] lock checks");
-  const checks = await collectLockChecks(root, ctx, projects);
-  for (const check of checks) {
-    console.log(`  ${check.status.toUpperCase().padEnd(5)} ${check.label} — ${check.detail}`);
-    for (const child of check.children ?? []) {
-      console.log(
-        `        ${child.status.toUpperCase().padEnd(5)} ${child.label}: ${child.detail}`
-      );
-    }
+    console.log("[smoke] pio context");
+    const ctx = locatePio(fixtureRoot, "", ".platformio");
+    assert(ctx.coreDir === path.join(fixtureRoot, ".platformio"), "uses project-local core dir");
+
+    console.log("[smoke] lock checks");
+    const checks = await collectLockChecks(fixtureRoot, ctx, projects);
+    assert(checks.length >= 1, "returns lock checks");
+    assert(
+      checks.some(check => check.id === "project:demo" && check.status === "ok"),
+      "reports a fully locked project"
+    );
+
+    console.log("[smoke] usb chip detection");
+    assert(
+      (chipFromHwid("USB VID:PID=1A86:7523 SER=ABC") ?? "").includes("CH340"),
+      "detects CH340 from hwid"
+    );
+    assert(parseVidPid("USB VID:PID=10C4:EA60")?.pid === "EA60", "parses VID/PID");
+    assert(chipFromHwid("n/a") === undefined, "unknown hwid has no chip");
+
+    console.log("[smoke] serial devices");
+    const devices = await scanSerialDevices(ctx);
+    assert(Array.isArray(devices.serial), "returns serial device array");
+
+    console.log("[smoke] sizes");
+    const sizes = await collectSizeEntries(fixtureRoot, projects);
+    assert(sizes.length > 0, "returns size entries");
+  } finally {
+    await fs.promises.rm(fixtureRoot, { recursive: true, force: true });
   }
-  assert(checks.length >= 1, "returns lock checks");
-
-  console.log("[smoke] usb chip detection");
-  assert(
-    (chipFromHwid("USB VID:PID=1A86:7523 SER=ABC") ?? "").includes("CH340"),
-    "detects CH340 from hwid"
-  );
-  assert(parseVidPid("USB VID:PID=10C4:EA60")?.pid === "EA60", "parses VID/PID");
-  assert(chipFromHwid("n/a") === undefined, "unknown hwid has no chip");
-
-  console.log("[smoke] serial devices");
-  const devices = await scanSerialDevices(ctx);
-  console.log(`  serial = ${devices.serial.length} (scanned at ${devices.scannedAt})`);
-  assert(Array.isArray(devices.serial), "returns serial device array");
 
   console.log("[smoke] esptool output parser");
   const esptoolSample = [
@@ -299,15 +317,6 @@ async function main(): Promise<void> {
   } finally {
     await fs.promises.rm(tmp2, { recursive: true, force: true });
   }
-
-  console.log("[smoke] sizes");
-  const sizes = await collectSizeEntries(root, projects);
-  for (const size of sizes) {
-    console.log(
-      `  ${size.group.padEnd(6)} ${size.label.padEnd(24)} ${size.exists ? formatBytes(size.bytes) : "missing"}`
-    );
-  }
-  assert(sizes.length > 0, "returns size entries");
 
   console.log("[smoke] done");
 }
