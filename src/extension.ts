@@ -151,7 +151,6 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.monitor", node => runTarget(node, "monitor"));
   reg("embeddedEnv.monitorPort", node => runTargetToPort(node, "monitor"));
   reg("embeddedEnv.flashMonitorPort", node => runTargetToPort(node, "flashMonitor"));
-  reg("embeddedEnv.debug", node => debugTarget(node));
   reg("embeddedEnv.generateDebugConfigs", () => generateDebugConfigs());
   reg("embeddedEnv.copyPortName", node => copyPortName(node));
   reg("embeddedEnv.clean", node => runTarget(node, "clean"));
@@ -1268,81 +1267,3 @@ async function generateDebugConfigs(): Promise<void> {
   );
 }
 
-async function debugTarget(node: unknown): Promise<void> {
-  if (!pioCtx || !repoRoot) return;
-  const target = await pickTarget(node);
-  if (!target) return;
-  const { project, env } = target;
-
-  if (!platformSupportsDebug(env.platform)) {
-    vscode.window.showWarningMessage(
-      [
-        `当前环境 platform = ${env.platform ?? "(未设置)"}，不支持断点调试。`,
-        "ESP8266 没有 JTAG，PlatformIO 也不提供调试工具，因此不会生成调试配置。",
-        "需要断点调试的话，建议换 ESP32-C3 / S3（内置 USB-JTAG）。",
-      ].join("\n")
-    );
-    return;
-  }
-
-  const firmwareElf = path.join(project.dir, ".pio", "build", env.name, "firmware.elf");
-  if (!fs.existsSync(firmwareElf)) {
-    const build = await vscode.window.showInformationMessage(
-      "还没有固件（firmware.elf），需要先构建一次。",
-      "现在构建"
-    );
-    if (build === "现在构建") await runActionFor(target, "build");
-    return;
-  }
-
-  const gdbPath = findGdbPath(pioCtx.coreDir, env.platform);
-  if (!gdbPath) {
-    vscode.window.showErrorMessage("未找到 GDB（PlatformIO 工具链未安装？先构建一次再试）。");
-    return;
-  }
-
-  const config = buildCppdbgConfig({
-    name: `PIO Debug · ${project.name} / ${env.name}`,
-    projectDir: project.dir,
-    firmwareElf,
-    gdbPath,
-    serverAddress: "localhost:3333",
-  });
-
-  const merged = await upsertLaunchConfiguration(repoRoot, config);
-  if (merged.skipped) {
-    vscode.window.showWarningMessage(`未修改 launch.json：${merged.skipped}`);
-  } else {
-    out.appendLine(`[debug] 已写入 ${merged.path}`);
-  }
-
-  const choice = await vscode.window.showWarningMessage(
-    [
-      "调试是实验性功能：",
-      `- 已生成 ${path.relative(repoRoot, merged.path)}（cppdbg / ${path.basename(gdbPath)}）`,
-      "- 需要 ESP32 硬件与 ms-vscode.cpptools 扩展",
-      "- 不会自动启动 OpenOCD 调试服务器（localhost:3333），连接可能失败",
-      "",
-      "要现在尝试启动调试会话吗？",
-    ].join("\n"),
-    { modal: true },
-    "尝试调试",
-    "只生成配置"
-  );
-  if (choice !== "尝试调试") return;
-
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  try {
-    const started = await vscode.debug.startDebugging(
-      folder,
-      config as vscode.DebugConfiguration
-    );
-    if (!started) {
-      vscode.window.showWarningMessage("调试会话没有启动（cpptools 未安装或配置被拒绝）。");
-    }
-  } catch (err) {
-    vscode.window.showErrorMessage(
-      `调试启动失败（没有硬件/调试服务器时属于预期）：${String(err)}`
-    );
-  }
-}
