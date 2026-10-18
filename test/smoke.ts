@@ -21,12 +21,6 @@ import {
   scaffoldProject,
   validateProjectName,
 } from "../src/core/scaffold";
-import {
-  buildCppdbgConfig,
-  findGdbPath,
-  platformSupportsDebug,
-  upsertLaunchConfiguration,
-} from "../src/core/debug";
 import { collectLockChecks } from "../src/core/versions";
 import { collectSizeEntries, formatBytes } from "../src/core/sizes";
 import { parseIni, envValue, values } from "../src/core/ini";
@@ -217,56 +211,6 @@ async function main(): Promise<void> {
     assert(duplicateRejected, "rejects duplicate environment");
   } finally {
     await fs.promises.rm(tmp, { recursive: true, force: true });
-  }
-
-  console.log("[smoke] debug helpers");
-  assert(platformSupportsDebug("espressif32@6.7.0"), "espressif32 supports debug");
-  assert(!platformSupportsDebug("espressif8266@4.2.1"), "espressif8266 has no debug support");
-  const debugCfg = buildCppdbgConfig({
-    name: "PIO Debug · demo / env",
-    projectDir: "C:/demo",
-    firmwareElf: "C:/demo/.pio/build/env/firmware.elf",
-    gdbPath: "C:/gdb/xtensa-esp32-elf-gdb.exe",
-  });
-  assert(debugCfg.type === "cppdbg", "builds cppdbg config");
-  assert(debugCfg.miDebuggerServerAddress === "localhost:3333", "defaults gdb server address");
-  assert(String(debugCfg.program).endsWith("firmware.elf"), "points at firmware.elf");
-
-  const tmpGdb = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-gdb-"));
-  try {
-    const esp8266Bin = path.join(tmpGdb, "packages", "toolchain-xtensa", "bin");
-    const esp32Bin = path.join(tmpGdb, "packages", "toolchain-xtensa-esp32", "bin");
-    await fs.promises.mkdir(esp8266Bin, { recursive: true });
-    await fs.promises.mkdir(esp32Bin, { recursive: true });
-    await fs.promises.writeFile(path.join(esp8266Bin, "xtensa-lx106-elf-gdb.exe"), "");
-    await fs.promises.writeFile(path.join(esp32Bin, "xtensa-esp32-elf-gdb.exe"), "");
-    assert(
-      (findGdbPath(tmpGdb, "espressif8266@4.2.1") ?? "").includes("lx106"),
-      "picks lx106 gdb for ESP8266"
-    );
-    assert(
-      (findGdbPath(tmpGdb, "espressif32@6.7.0") ?? "").includes("esp32-elf-gdb"),
-      "picks esp32 gdb for ESP32"
-    );
-  } finally {
-    await fs.promises.rm(tmpGdb, { recursive: true, force: true });
-  }
-
-  const tmpDebug = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-debug-"));
-  try {
-    const first = await upsertLaunchConfiguration(tmpDebug, debugCfg);
-    assert(fs.existsSync(first.path), "creates launch.json");
-    const second = await upsertLaunchConfiguration(tmpDebug, {
-      ...debugCfg,
-      name: "PIO Debug · demo / env2",
-    });
-    assert(second.updated, "updates launch.json");
-    const launch = JSON.parse(await fs.promises.readFile(first.path, "utf8")) as {
-      configurations: Array<{ name: string }>;
-    };
-    assert(launch.configurations.length === 2, "merges debug configurations");
-  } finally {
-    await fs.promises.rm(tmpDebug, { recursive: true, force: true });
   }
 
   console.log("[smoke] project source discovery");

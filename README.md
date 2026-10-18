@@ -3,7 +3,7 @@
 把任意文件夹变成嵌入式工程目录：工程、设备、缓存都在这个面板里管理，
 环境（Python + PlatformIO）也由扩展自己创建，不需要脚本或仓库模板。
 
-- **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可删除工程、生成调试配置等；`platformio.ini` 用命令面板打开
+- **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可删除工程等；`platformio.ini` 用命令面板打开
 - **设备**视图：扫描串口，显示 COM 口、描述、硬件 ID（VID/PID）和 USB 桥接芯片（CH340、CP210x、FTDI…）；右键「识别芯片（esptool）」可读出目标 MCU 型号（如 `ESP8266EX`）、Flash 大小、MAC 地址
 - **缓存**视图：`.platformio/packages`、`platforms`、`.venv`、各工程 `.pio` 的体积
 - **版本**视图：PlatformIO 版本（插件锁定 6.2.0）、platform/lib_deps 是否锁版本
@@ -29,7 +29,6 @@
 | 烧录并监视串口 | 烧录成功后自动在同一终端打开串口监视，直接看启动输出 |
 | 打开源码 | 打开工程入口源码（优先 `src/main.cpp`），单击工程节点即触发 |
 | 打开 platformio.ini | 打开工程配置文件（命令面板） |
-| 生成调试配置（launch.json） | 为 ESP32 且已构建的环境写入 cppdbg 调试配置，出现在「运行和调试」下拉框 |
 | 检查依赖更新 | 对所有工程运行 `pio pkg outdated`，输出到「统一嵌入式」面板 |
 | 版本体检 | 检查 PlatformIO 版本、各工程 platform/lib_deps 是否锁版本，结果输出到「统一嵌入式」面板 |
 | 识别芯片（esptool） | 读取串口设备的目标 MCU、Flash 大小、MAC |
@@ -62,13 +61,6 @@
 
 平台版本会自动查询 PlatformIO registry 并写死（如 `espressif8266@4.2.1`）；查不到时提示首次构建后再锁定。
 生成后自动刷新视图、设为当前环境，并询问是否立即构建（首次构建会下载工具链）。
-
-## 调试配置（实验性）
-
-- 只有「生成调试配置（launch.json）」命令；**仅 ESP32 系列**会生成
-- 生成 `cppdbg` 配置，GDB 路径自动从 `.platformio/packages/toolchain-*` 按平台查找
-- **不会自动启动 OpenOCD 调试服务器**（`localhost:3333`），需要自己启动调试服务器；需要 `ms-vscode.cpptools`
-- ESP8266 没有 JTAG，不会生成配置；真机断点建议用 ESP32-C3/S3（内置 USB-JTAG）
 
 ## 构建（扩展开发）
 

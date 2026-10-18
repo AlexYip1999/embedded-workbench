@@ -7,12 +7,6 @@ import { PLATFORMIO_VERSION } from "./core/constants";
 import { ensureEnvironment } from "./core/bootstrap";
 import { scanSerialDevices } from "./core/ports";
 import { ChipInfo, detectChip, findEsptool, installEsptool } from "./core/esptool";
-import {
-  buildCppdbgConfig,
-  findGdbPath,
-  platformSupportsDebug,
-  upsertLaunchConfiguration,
-} from "./core/debug";
 import { collectSizeEntries, formatBytes } from "./core/sizes";
 import { findProjectSource } from "./core/sources";
 import { collectLockChecks } from "./core/versions";
@@ -151,7 +145,6 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.monitor", node => runTarget(node, "monitor"));
   reg("embeddedEnv.monitorPort", node => runTargetToPort(node, "monitor"));
   reg("embeddedEnv.flashMonitorPort", node => runTargetToPort(node, "flashMonitor"));
-  reg("embeddedEnv.generateDebugConfigs", () => generateDebugConfigs());
   reg("embeddedEnv.copyPortName", node => copyPortName(node));
   reg("embeddedEnv.clean", node => runTarget(node, "clean"));
   reg("embeddedEnv.cleanBuild", node => cleanBuild(node));
@@ -1209,61 +1202,5 @@ async function attemptDeleteProject(projectDir: string): Promise<string | undefi
   } catch (err) {
     return String(err);
   }
-}
-
-/**
- * Experimental debug integration:
- * - ESP32 family only (ESP8266 has no JTAG / PlatformIO debug tool)
- * - generates a `.vscode/launch.json` cppdbg entry for the selected env
- * - starts the VS Code debug session (OpenOCD server is NOT started automatically,
- *   so connecting may fail until a debug server is running on localhost:3333)
- */
-/**
- * Write launch configurations for every already-built environment so they show
- * up in the "Run and Debug" dropdown. ESP32 gets a real cppdbg config; ESP8266
- * gets an experimental placeholder (no JTAG, connection will fail).
- */
-async function generateDebugConfigs(): Promise<void> {
-  if (!repoRoot || !pioCtx) return;
-
-  let generated = 0;
-  let skipped = 0;
-  for (const project of state.projects) {
-    for (const env of project.envs) {
-      if (!platformSupportsDebug(env.platform)) {
-        skipped++;
-        continue;
-      }
-      const firmwareElf = path.join(project.dir, ".pio", "build", env.name, "firmware.elf");
-      if (!fs.existsSync(firmwareElf)) {
-        skipped++;
-        continue;
-      }
-      const gdbPath = findGdbPath(pioCtx.coreDir, env.platform);
-      if (!gdbPath) {
-        skipped++;
-        continue;
-      }
-      const name = `PIO Debug · ${project.name} / ${env.name}`;
-      const config = buildCppdbgConfig({
-        name,
-        projectDir: project.dir,
-        firmwareElf,
-        gdbPath,
-      });
-      const result = await upsertLaunchConfiguration(repoRoot, config);
-      if (result.skipped) {
-        vscode.window.showWarningMessage(`未修改 launch.json：${result.skipped}`);
-        return;
-      }
-      generated++;
-    }
-  }
-
-  out.appendLine(`[debug] generated ${generated} launch config(s), skipped ${skipped}`);
-  vscode.window.showInformationMessage(
-    `已生成 ${generated} 条调试配置到 .vscode/launch.json（${skipped} 个环境跳过：非 ESP32 或缺少 firmware.elf）。\n` +
-      "在「运行和调试」下拉框里选择即可。"
-  );
 }
 
