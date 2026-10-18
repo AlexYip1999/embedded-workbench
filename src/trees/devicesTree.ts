@@ -91,6 +91,7 @@ export class DevicesProvider implements vscode.TreeDataProvider<DeviceTreeItem> 
 
   private listing: DeviceListing | undefined;
   private scanning = false;
+  private notice: string | undefined;
   private readonly chipInfo = new Map<string, ChipInfo>();
 
   refresh(): void {
@@ -99,13 +100,22 @@ export class DevicesProvider implements vscode.TreeDataProvider<DeviceTreeItem> 
 
   setScanning(): void {
     this.scanning = true;
+    this.notice = undefined;
     this.listing = undefined;
     this.refresh();
   }
 
   setListing(listing: DeviceListing): void {
     this.scanning = false;
+    this.notice = undefined;
     this.listing = listing;
+    this.refresh();
+  }
+
+  setNotice(message: string): void {
+    this.scanning = false;
+    this.listing = undefined;
+    this.notice = message;
     this.refresh();
   }
 
@@ -123,6 +133,9 @@ export class DevicesProvider implements vscode.TreeDataProvider<DeviceTreeItem> 
   }
 
   getChildren(element?: DeviceTreeItem): DeviceTreeItem[] {
+    if (this.notice) {
+      return [new DeviceInfoNode(this.notice, "info")];
+    }
     if (!this.listing) {
       return [new DeviceInfoNode(this.scanning ? "正在扫描串口…" : "点击刷新扫描串口")];
     }

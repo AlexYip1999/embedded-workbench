@@ -55,8 +55,10 @@ async function main(): Promise<void> {
   assert(envValue(doc, "nodemcuv2", "platform")[0] === "espressif8266", "inherits [env] values");
 
   console.log("[smoke] repo root + projects");
-  const root = findRepoRoot([process.cwd()]);
-  assert(!!root, "finds repo root from cwd");
+  const workspaceRoot = path.resolve(process.cwd(), "..");
+  const root = findRepoRoot([workspaceRoot]);
+  assert(root === workspaceRoot, "uses the opened workspace folder that owns projects/");
+  assert(findRepoRoot([process.cwd()]) === process.cwd(), "never walks up into a parent folder");
   if (!root) return;
   console.log(`  root = ${root}`);
   const projects = scanProjects(root);

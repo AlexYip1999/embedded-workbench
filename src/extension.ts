@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { EnvModel, ProjectModel, findRepoRoot, resolveEnv, scanProjects } from "./core/repo";
+import { EnvModel, ProjectModel, findRepoRoot, hasProjectsDir, resolveEnv, scanProjects } from "./core/repo";
 import { PioContext, locatePio, runPio } from "./core/pio";
 import { PLATFORMIO_VERSION } from "./core/constants";
 import { ensureEnvironment } from "./core/bootstrap";
@@ -98,11 +98,11 @@ export function activate(context: vscode.ExtensionContext): void {
     })
   );
 
-  if (!fs.existsSync(pioCtx.pioExe)) {
+  if (hasProjectsDir(repoRoot) && !fs.existsSync(pioCtx.pioExe)) {
     out.appendLine(`[warn] 未找到 pio：${pioCtx.pioExe}`);
     void vscode.window
       .showWarningMessage(
-        "统一嵌入式：还没有 PlatformIO 环境（首次使用需要安装）。",
+        "Embedded Workbench：还没有 PlatformIO 环境（首次使用需要安装）。",
         "初始化环境",
         "稍后"
       )
@@ -170,7 +170,8 @@ async function refreshAll(): Promise<void> {
   projectsProvider.refresh();
   cacheProvider.reset();
 
-  if (pioCtx) {
+  const workspaceReady = hasProjectsDir(repoRoot);
+  if (pioCtx && workspaceReady) {
     const version = await readPioVersion();
     if (version) statusBar.setPioVersion(version);
     statusBar.update(state, pioCtx);
@@ -183,6 +184,16 @@ async function refreshAll(): Promise<void> {
     }
 
     void refreshDevices();
+  } else if (!workspaceReady) {
+    devicesProvider.setNotice("当前工作区不是嵌入式工程目录（缺少 projects/），未扫描串口。");
+    versionsProvider.setChecks([
+      {
+        id: "workspace",
+        label: "工作区",
+        detail: "缺少 projects/ 目录，不是嵌入式工作区",
+        status: "info",
+      },
+    ]);
   }
   void computeSizes(false);
 }
@@ -217,7 +228,11 @@ async function bootstrapEnvironment(): Promise<void> {
 }
 
 async function refreshDevices(): Promise<void> {
-  if (!pioCtx) return;
+  if (!pioCtx || !repoRoot) return;
+  if (!hasProjectsDir(repoRoot)) {
+    devicesProvider.setNotice("当前工作区不是嵌入式工程目录（缺少 projects/），未扫描串口。");
+    return;
+  }
   devicesProvider.setScanning();
   try {
     devicesProvider.setListing(await scanSerialDevices(pioCtx));

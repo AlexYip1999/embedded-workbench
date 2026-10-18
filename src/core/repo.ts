@@ -20,20 +20,24 @@ export interface ProjectModel {
   envs: EnvModel[];
 }
 
-/** Locate the unified repository root: has `projects/` and `requirements.txt`. */
+/**
+ * Resolve the workspace root. Only the opened folder(s) are considered —
+ * the extension never walks up into a parent directory. If none of the opened
+ * folders owns a `projects/` directory, the first opened folder is used as-is.
+ */
 export function findRepoRoot(startDirs: string[]): string | undefined {
-  for (const start of startDirs) {
-    let cur = path.resolve(start);
-    for (;;) {
-      if (fs.existsSync(path.join(cur, "projects"))) {
-        return cur;
-      }
-      const parent = path.dirname(cur);
-      if (parent === cur) break;
-      cur = parent;
+  const folders = startDirs.map(dir => path.resolve(dir));
+  for (const folder of folders) {
+    if (fs.existsSync(path.join(folder, "projects"))) {
+      return folder;
     }
   }
-  return undefined;
+  return folders[0];
+}
+
+/** True when the workspace has the expected `projects/` directory. */
+export function hasProjectsDir(root: string): boolean {
+  return fs.existsSync(path.join(root, "projects"));
 }
 
 function first(v: string[]): string | undefined {
