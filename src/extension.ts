@@ -34,7 +34,6 @@ import {
 import { CacheEntryNode, CacheProvider } from "./trees/cacheTree";
 import { DevicesProvider, SerialDeviceNode } from "./trees/devicesTree";
 import { EnvNode, ProjectNode, ProjectsProvider, ProjectsState } from "./trees/projectsTree";
-import { LockNode, VersionsProvider } from "./trees/versionsTree";
 import { StatusBar } from "./statusbar";
 
 interface Target {
@@ -53,7 +52,6 @@ let out: vscode.OutputChannel;
 let projectsProvider: ProjectsProvider;
 let devicesProvider: DevicesProvider;
 let cacheProvider: CacheProvider;
-let versionsProvider: VersionsProvider;
 let statusBar: StatusBar;
 let buildTerminal: vscode.Terminal | undefined;
 let buildTerminalCwd: string | undefined;
@@ -87,7 +85,6 @@ export function activate(context: vscode.ExtensionContext): void {
   projectsProvider = new ProjectsProvider(() => state);
   devicesProvider = new DevicesProvider();
   cacheProvider = new CacheProvider();
-  versionsProvider = new VersionsProvider();
   statusBar = new StatusBar();
   context.subscriptions.push(statusBar);
 
@@ -101,9 +98,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.window.createTreeView("embeddedEnv.cache", {
       treeDataProvider: cacheProvider,
-    }),
-    vscode.window.createTreeView("embeddedEnv.versions", {
-      treeDataProvider: versionsProvider,
     })
   );
 
@@ -161,7 +155,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.openIni", node => openIni(node));
   reg("embeddedEnv.openSource", node => openSource(node));
   reg("embeddedEnv.openPath", node => openPath(node));
-  reg("embeddedEnv.openCheckFile", node => openCheckFile(node));
+  reg("embeddedEnv.checkVersions", () => checkVersions());
   reg("embeddedEnv.checkUpdates", () => checkUpdates());
 }
 
@@ -189,25 +183,9 @@ async function refreshAll(): Promise<void> {
     const version = await readPioVersion();
     if (version) statusBar.setPioVersion(version);
     statusBar.update(state, pioCtx);
-
-    try {
-      const checks = await collectLockChecks(repoRoot, pioCtx, state.projects);
-      versionsProvider.setChecks(checks);
-    } catch (err) {
-      out.appendLine(`[error] 版本检查失败: ${String(err)}`);
-    }
-
     void refreshDevices();
   } else if (!workspaceReady) {
     devicesProvider.setNotice("当前工作区不是嵌入式工程目录（缺少 projects/），未扫描串口。");
-    versionsProvider.setChecks([
-      {
-        id: "workspace",
-        label: "工作区",
-        detail: "缺少 projects/ 目录，不是嵌入式工作区",
-        status: "info",
-      },
-    ]);
   }
   void computeSizes(false);
 }
@@ -581,15 +559,30 @@ async function openPath(node: unknown): Promise<void> {
   await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(node.entry.path));
 }
 
-async function openCheckFile(node: unknown): Promise<void> {
-  if (!(node instanceof LockNode)) return;
-  const file = node.check.file;
-  if (!file || !fs.existsSync(file)) {
-    vscode.window.showInformationMessage("没有可打开的相关文件。");
+async function checkVersions(): Promise<void> {
+  if (!pioCtx || !repoRoot) return;
+  if (!hasProjectsDir(repoRoot)) {
+    vscode.window.showInformationMessage("当前工作区不是嵌入式工程目录（缺少 projects/）。");
     return;
   }
-  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
-  await vscode.window.showTextDocument(doc, { preview: true });
+  try {
+    const checks = await collectLockChecks(repoRoot, pioCtx, state.projects);
+    out.show(true);
+    out.appendLine("===== 版本体检 =====");
+    let issues = 0;
+    for (const check of checks) {
+      out.appendLine(`${check.status.toUpperCase().padEnd(5)} ${check.label} — ${check.detail}`);
+      if (check.status === "warn" || check.status === "error") issues++;
+      for (const child of check.children ?? []) {
+        out.appendLine(`      ${child.status.toUpperCase().padEnd(5)} ${child.label}: ${child.detail}`);
+      }
+    }
+    vscode.window.showInformationMessage(
+      `版本体检完成：${checks.length} 项，${issues} 项需要注意。结果见「统一嵌入式」输出面板。`
+    );
+  } catch (err) {
+    vscode.window.showErrorMessage(`版本体检失败：${String(err)}`);
+  }
 }
 
 async function checkUpdates(): Promise<void> {
