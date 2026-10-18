@@ -1,5 +1,11 @@
 # 更新日志
 
+## 0.10.0
+
+- 新增实验性「调试（Debug）」命令：ESP32 环境生成 `.vscode/launch.json`（cppdbg），可选启动 VS Code 调试会话
+- ESP8266 会明确提示不支持（无 JTAG、PlatformIO 无调试工具）
+- 不会自动启动 OpenOCD 调试服务器（localhost:3333），连接可能失败；需要 ESP32 硬件 + `ms-vscode.cpptools`
+
 ## 0.9.0
 
 - 新增「烧录并监视串口」：烧录成功后自动在同一终端打开串口监视，直接看到启动日志
