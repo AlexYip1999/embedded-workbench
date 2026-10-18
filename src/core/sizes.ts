@@ -59,7 +59,10 @@ export interface SizeProject {
   dir: string;
 }
 
-export async function collectSizeEntries(root: string, projects: SizeProject[]): Promise<SizeEntry[]> {
+export async function collectSizeEntries(
+  root: string,
+  projects: SizeProject[]
+): Promise<SizeEntry[]> {
   const entries: SizeEntry[] = [];
   const pioDir = path.join(root, ".platformio");
 

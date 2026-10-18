@@ -59,7 +59,11 @@ export function chipFromHwid(hwid?: string): string | undefined {
 
 function asArray(value: unknown): unknown[] {
   if (Array.isArray(value)) return value;
-  if (value && typeof value === "object" && Array.isArray((value as { serial?: unknown[] }).serial)) {
+  if (
+    value &&
+    typeof value === "object" &&
+    Array.isArray((value as { serial?: unknown[] }).serial)
+  ) {
     return (value as { serial: unknown[] }).serial;
   }
   return [];

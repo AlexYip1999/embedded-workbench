@@ -16,7 +16,10 @@ export interface ProjectsState {
 
 export class ProjectNode {
   public readonly kind = "project";
-  constructor(public readonly project: ProjectModel, public readonly activeEnv?: string) {}
+  constructor(
+    public readonly project: ProjectModel,
+    public readonly activeEnv?: string
+  ) {}
 
   toTreeItem(): vscode.TreeItem {
     const item = new vscode.TreeItem(this.project.name, vscode.TreeItemCollapsibleState.Collapsed);
@@ -50,7 +53,9 @@ export class SourceGroupNode {
     const files = listProjectSources(this.project.dir);
     const item = new vscode.TreeItem(
       "源码",
-      files.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None
+      files.length > 0
+        ? vscode.TreeItemCollapsibleState.Expanded
+        : vscode.TreeItemCollapsibleState.None
     );
     item.description = files.length > 0 ? `${files.length} 个文件` : "无";
     item.contextValue = "sourceGroup";
@@ -130,11 +135,7 @@ export class EnvNode {
 }
 
 export type ProjectTreeItem =
-  | ProjectNode
-  | SourceGroupNode
-  | SourceFileNode
-  | SourceHintNode
-  | EnvNode;
+  ProjectNode | SourceGroupNode | SourceFileNode | SourceHintNode | EnvNode;
 
 export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem> {
   private readonly emitter = new vscode.EventEmitter<ProjectTreeItem | undefined | void>();

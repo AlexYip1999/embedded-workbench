@@ -91,11 +91,7 @@ export async function ensureEnvironment(
       return { ok: false, message: "未找到 Python 3.9+，请先安装 Python 并加入 PATH。" };
     }
     log(`[bootstrap] 创建虚拟环境：${venv}`);
-    const created = await run(
-      systemPython.cmd,
-      [...systemPython.args, "-m", "venv", venv],
-      180000
-    );
+    const created = await run(systemPython.cmd, [...systemPython.args, "-m", "venv", venv], 180000);
     if (created.code !== 0 || !fs.existsSync(python)) {
       return { ok: false, message: `创建虚拟环境失败：\n${tail(created.out)}` };
     }

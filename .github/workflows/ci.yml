@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Package VSIX
+        run: npx @vscode/vsce package --allow-missing-repository --skip-license --no-dependencies -o embedded-workbench.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: embedded-workbench.vsix

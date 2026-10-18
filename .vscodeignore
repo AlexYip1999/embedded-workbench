@@ -8,3 +8,10 @@ install.ps1
 **/*.map
 *.vsix
 .gitignore
+.github/**
+.editorconfig
+.prettierrc.json
+.prettierignore
+eslint.config.mjs
+ARCHITECTURE.md
+package-lock.json

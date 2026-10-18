@@ -28,7 +28,8 @@ export interface ChipDetectResult {
 
 function pythonFor(ctx: PioContext): string {
   const dir = path.dirname(ctx.pioExe);
-  const candidate = process.platform === "win32" ? path.join(dir, "python.exe") : path.join(dir, "python");
+  const candidate =
+    process.platform === "win32" ? path.join(dir, "python.exe") : path.join(dir, "python");
   if (fs.existsSync(candidate)) return candidate;
   return process.platform === "win32" ? "python" : "python3";
 }

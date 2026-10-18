@@ -1,0 +1,31 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Check tag matches package version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "$env:GITHUB_REF_NAME".TrimStart("v")
+          if ($version -ne $tag) { throw "tag $tag does not match package.json version $version" }
+      - name: Package VSIX
+        run: npx @vscode/vsce package --allow-missing-repository --skip-license --no-dependencies -o embedded-workbench.vsix
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: embedded-workbench.vsix

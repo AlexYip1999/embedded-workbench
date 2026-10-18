@@ -63,7 +63,9 @@ async function main(): Promise<void> {
   if (!root) return;
   console.log(`  root = ${root}`);
   const projects = scanProjects(root);
-  console.log(`  projects = ${projects.map(p => `${p.name}:${p.envs.map(e => e.name).join("/")}`).join(", ")}`);
+  console.log(
+    `  projects = ${projects.map(p => `${p.name}:${p.envs.map(e => e.name).join("/")}`).join(", ")}`
+  );
   assert(projects.length > 0, "scans at least one project");
 
   const env = projects[0].envs[0];
@@ -80,7 +82,9 @@ async function main(): Promise<void> {
   for (const check of checks) {
     console.log(`  ${check.status.toUpperCase().padEnd(5)} ${check.label} — ${check.detail}`);
     for (const child of check.children ?? []) {
-      console.log(`        ${child.status.toUpperCase().padEnd(5)} ${child.label}: ${child.detail}`);
+      console.log(
+        `        ${child.status.toUpperCase().padEnd(5)} ${child.label}: ${child.detail}`
+      );
     }
   }
   assert(checks.length >= 1, "returns lock checks");
@@ -132,10 +136,42 @@ async function main(): Promise<void> {
 
   const boardFixtures = parseBoardsJson(
     JSON.stringify([
-      { id: "nodemcuv2", name: "NodeMCU 1.0", mcu: "ESP8266", ram: 81920, rom: 4194304, frameworks: ["arduino"], platform: "espressif8266" },
-      { id: "esp01_1m", name: "ESP-01S", mcu: "ESP8266", ram: 81920, rom: 1048576, frameworks: ["arduino"], platform: "espressif8266" },
-      { id: "esp32dev", name: "ESP32 Dev", mcu: "ESP32", ram: 327680, rom: 4194304, frameworks: ["arduino"], platform: "espressif32" },
-      { id: "esp32-s3-devkitc-1", name: "ESP32-S3 DevKit", mcu: "ESP32-S3", ram: 327680, rom: 8388608, frameworks: ["arduino"], platform: "espressif32" },
+      {
+        id: "nodemcuv2",
+        name: "NodeMCU 1.0",
+        mcu: "ESP8266",
+        ram: 81920,
+        rom: 4194304,
+        frameworks: ["arduino"],
+        platform: "espressif8266",
+      },
+      {
+        id: "esp01_1m",
+        name: "ESP-01S",
+        mcu: "ESP8266",
+        ram: 81920,
+        rom: 1048576,
+        frameworks: ["arduino"],
+        platform: "espressif8266",
+      },
+      {
+        id: "esp32dev",
+        name: "ESP32 Dev",
+        mcu: "ESP32",
+        ram: 327680,
+        rom: 4194304,
+        frameworks: ["arduino"],
+        platform: "espressif32",
+      },
+      {
+        id: "esp32-s3-devkitc-1",
+        name: "ESP32-S3 DevKit",
+        mcu: "ESP32-S3",
+        ram: 327680,
+        rom: 8388608,
+        frameworks: ["arduino"],
+        platform: "espressif32",
+      },
     ]),
     "espressif8266"
   );
@@ -267,7 +303,9 @@ async function main(): Promise<void> {
   console.log("[smoke] sizes");
   const sizes = await collectSizeEntries(root, projects);
   for (const size of sizes) {
-    console.log(`  ${size.group.padEnd(6)} ${size.label.padEnd(24)} ${size.exists ? formatBytes(size.bytes) : "missing"}`);
+    console.log(
+      `  ${size.group.padEnd(6)} ${size.label.padEnd(24)} ${size.exists ? formatBytes(size.bytes) : "missing"}`
+    );
   }
   assert(sizes.length > 0, "returns size entries");
 

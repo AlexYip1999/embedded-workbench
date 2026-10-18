@@ -1,0 +1,12 @@
+# Build outputs and generated files
+dist/
+out/
+node_modules/
+*.vsix
+
+# Metadata that should keep its own formatting
+package-lock.json
+README.md
+CHANGELOG.md
+media/
+.github/

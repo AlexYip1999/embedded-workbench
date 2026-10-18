@@ -3,7 +3,10 @@ import { SizeEntry, SizeGroup, formatBytes } from "../core/sizes";
 
 export class CacheGroupNode {
   public readonly kind = "cacheGroup";
-  constructor(public readonly group: SizeGroup, public readonly label: string) {}
+  constructor(
+    public readonly group: SizeGroup,
+    public readonly label: string
+  ) {}
 
   toTreeItem(hasChildren: boolean): vscode.TreeItem {
     const item = new vscode.TreeItem(

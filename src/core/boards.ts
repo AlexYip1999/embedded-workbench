@@ -13,7 +13,7 @@ const HINTS: Record<string, BoardHint> = {
   esp32dev: { chip: "ESP32", flashMb: 4 },
   "esp32-c3-devkitm-1": { chip: "ESP32-C3", flashMb: 4 },
   "esp32-s3-devkitc-1": { chip: "ESP32-S3", flashMb: 8 },
-  "esp32cam": { chip: "ESP32", flashMb: 4 },
+  esp32cam: { chip: "ESP32", flashMb: 4 },
 };
 
 export function boardHint(id?: string): BoardHint | undefined {

@@ -27,10 +27,17 @@ export function locatePio(
   const candidates: string[] = [];
   const configured = pioPathSetting.trim();
   if (configured) {
-    candidates.push(path.isAbsolute(configured) ? configured : path.join(workspaceRoot, configured));
+    candidates.push(
+      path.isAbsolute(configured) ? configured : path.join(workspaceRoot, configured)
+    );
   }
   candidates.push(
-    path.join(workspaceRoot, ".venv", isWindows() ? "Scripts" : "bin", isWindows() ? "pio.exe" : "pio")
+    path.join(
+      workspaceRoot,
+      ".venv",
+      isWindows() ? "Scripts" : "bin",
+      isWindows() ? "pio.exe" : "pio"
+    )
   );
   const found = candidates.find(c => fs.existsSync(c));
   const coreDir = path.isAbsolute(coreDirSetting)
@@ -81,4 +88,3 @@ export function runPio(
     );
   });
 }
-

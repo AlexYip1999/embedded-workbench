@@ -62,14 +62,26 @@
 平台版本会自动查询 PlatformIO registry 并写死（如 `espressif8266@4.2.1`）；查不到时提示首次构建后再锁定。
 生成后自动刷新视图、设为当前环境，并询问是否立即构建（首次构建会下载工具链）。
 
+## 架构
+
+代码分层、依赖方向和设计约定见 [ARCHITECTURE.md](ARCHITECTURE.md)：
+
+```
+extension.ts → workbench.ts → commands.ts → wizards.ts / features.ts
+                                   └────────► core/* + trees/*
+```
+
+`core/*` 不依赖 `vscode`，可直接在 Node 里测试。
+
 ## 构建（扩展开发）
 
 ```powershell
 cd vscode-envgui
-npm install
-npm run typecheck
-npm run build
-npm run smoke      # 用真实工作区数据跑一遍核心逻辑（含串口扫描、向导、删除校验）
+npm ci
+npm run check       # typecheck + ESLint + smoke + 激活测试 + build + Prettier 检查
+npm run format      # 自动格式化 src/ 和 test/
+npm run lint        # 只跑 ESLint
+npm test            # 核心逻辑 smoke 测试
 ```
 
 ## 打包与本地安装
@@ -77,7 +89,7 @@ npm run smoke      # 用真实工作区数据跑一遍核心逻辑（含串口�
 ```powershell
 .\install.ps1
 # 等价于：npx @vscode/vsce package --allow-missing-repository --skip-license --no-dependencies
-#         code --install-extension embedded-workbench-0.9.0.vsix --force
+#         code --install-extension embedded-workbench-<version>.vsix --force
 ```
 
 装完后在 VS Code 里 `Developer: Reload Window`，左侧活动栏会出现芯片图标。

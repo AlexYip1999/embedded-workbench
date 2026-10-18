@@ -159,7 +159,8 @@ function fallbackFrameworks(platformId: string): string[] {
 }
 
 export function frameworkChoices(platformId: string, board?: BoardInfo): string[] {
-  const offered = board && board.frameworks.length > 0 ? board.frameworks : fallbackFrameworks(platformId);
+  const offered =
+    board && board.frameworks.length > 0 ? board.frameworks : fallbackFrameworks(platformId);
   const unique = [...new Set(offered)];
   const preferred = FRAMEWORK_ORDER.filter(f => unique.includes(f));
   const rest = unique.filter(f => !preferred.includes(f));
@@ -254,7 +255,7 @@ export function generateMainSource(
       "    Serial.begin(115200);",
       "    delay(300);",
       "    pinMode(LED_BUILTIN, OUTPUT);",
-      '    Serial.println();',
+      "    Serial.println();",
       `    Serial.println("hello from ${projectName}");`,
       "}",
       "",
@@ -316,7 +317,11 @@ export async function scaffoldProject(input: ScaffoldInput): Promise<void> {
   );
 
   const source = generateMainSource(env, projectName);
-  await fs.promises.writeFile(path.join(projectDir, "src", source.fileName), source.content, "utf8");
+  await fs.promises.writeFile(
+    path.join(projectDir, "src", source.fileName),
+    source.content,
+    "utf8"
+  );
   await fs.promises.writeFile(
     path.join(projectDir, "README.md"),
     generateProjectReadme(env, projectName),
@@ -332,11 +337,7 @@ export async function addEnvironment(iniPath: string, env: EnvConfig): Promise<v
     throw new Error(`环境已存在：[env:${env.envName}]`);
   }
   const suffix = text.endsWith("\n") ? "" : "\n";
-  await fs.promises.writeFile(
-    iniPath,
-    `${text}${suffix}\n${generateEnvSection(env)}`,
-    "utf8"
-  );
+  await fs.promises.writeFile(iniPath, `${text}${suffix}\n${generateEnvSection(env)}`, "utf8");
 }
 
 export interface ChipSummary {
@@ -391,9 +392,7 @@ export function filterBoardsForChip(boards: BoardInfo[], chip: ChipSummary): Boa
   }
   if (!wanted && chipName.startsWith("ESP8266")) wanted = "ESP8266";
 
-  let filtered = wanted
-    ? boards.filter(board => board.mcu.trim().toUpperCase() === wanted)
-    : [];
+  let filtered = wanted ? boards.filter(board => board.mcu.trim().toUpperCase() === wanted) : [];
   if (filtered.length === 0 && wanted) {
     filtered = boards.filter(board => {
       const mcu = board.mcu.trim().toUpperCase();

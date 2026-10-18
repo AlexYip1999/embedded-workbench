@@ -53,7 +53,12 @@ function parseLibDeps(raw: string[]): string[] {
       if (!t) continue;
       const isRemote = /^https?:/i.test(t) || /^(file|symlink|git\+?):/i.test(t);
       if (!isRemote && t.includes(",")) {
-        out.push(...t.split(",").map(s => s.trim()).filter(Boolean));
+        out.push(
+          ...t
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean)
+        );
       } else {
         out.push(t);
       }

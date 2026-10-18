@@ -1,5 +1,13 @@
 # 更新日志
 
+## 0.14.0
+
+- 重构插件结构：`extension.ts` 只负责激活，新增 `workbench.ts`（状态/编排）、`commands.ts`（命令注册表）、`wizards.ts`（向导）、`features.ts`（功能处理器）
+- 工程化：ESLint（flat config）+ Prettier + `.editorconfig`，新增 `npm run lint/format/check`
+- 测试：新增 `test/activation-smoke.cjs`（用 stub 的 vscode API 加载 dist 并校验 29 个命令注册），接入 `npm run check`
+- CI：`.github/workflows/ci.yml`（typecheck/lint/test/激活测试/build/VSIX 产物）和 `release.yml`（tag 发布）
+- 文档：新增 `ARCHITECTURE.md`，README 增加架构与开发命令
+
 ## 0.13.5
 
 - 删除「生成调试配置（launch.json）」命令、工程视图标题栏按钮和右键菜单入口
