@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { findRepoRoot, scanProjects } from "../src/core/repo";
+import { findProjectSource } from "../src/core/sources";
 import { locatePio } from "../src/core/pio";
 import { chipFromHwid, parseVidPid, scanSerialDevices } from "../src/core/ports";
 import { parseEsptoolOutput } from "../src/core/esptool";
@@ -241,6 +242,19 @@ async function main(): Promise<void> {
     assert(launch.configurations.length === 2, "merges debug configurations");
   } finally {
     await fs.promises.rm(tmpDebug, { recursive: true, force: true });
+  }
+
+  console.log("[smoke] project source discovery");
+  const tmpSrc = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-src-"));
+  try {
+    await fs.promises.mkdir(path.join(tmpSrc, "src"), { recursive: true });
+    assert(findProjectSource(tmpSrc) === undefined, "returns undefined without sources");
+    await fs.promises.writeFile(path.join(tmpSrc, "src", "other.cpp"), "");
+    assert((findProjectSource(tmpSrc) ?? "").endsWith("other.cpp"), "finds first source");
+    await fs.promises.writeFile(path.join(tmpSrc, "src", "main.cpp"), "");
+    assert((findProjectSource(tmpSrc) ?? "").endsWith("main.cpp"), "prefers main.cpp");
+  } finally {
+    await fs.promises.rm(tmpSrc, { recursive: true, force: true });
   }
 
   console.log("[smoke] delete project guard");

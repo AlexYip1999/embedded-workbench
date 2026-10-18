@@ -25,12 +25,14 @@ export class ProjectNode {
     item.tooltip.appendMarkdown(`**${this.project.name}**\n\n`);
     item.tooltip.appendMarkdown(`- 目录: \`${this.project.dir}\`\n`);
     item.tooltip.appendMarkdown(`- 默认环境: \`${defaultEnv ?? "-"}\`\n`);
-    item.tooltip.appendMarkdown(`- 当前环境: \`${this.activeEnv ?? "-"}\``);
+    item.tooltip.appendMarkdown(`- 当前环境: \`${this.activeEnv ?? "-"}\`\n`);
+    item.tooltip.appendMarkdown("- 点击打开源码（`src/main.cpp`）\n");
+    item.tooltip.appendMarkdown("- 右键可打开 `platformio.ini`");
     item.contextValue = "project";
     item.iconPath = new vscode.ThemeIcon("circuit-board");
     item.command = {
-      command: "embeddedEnv.openIni",
-      title: "打开 platformio.ini",
+      command: "embeddedEnv.openSource",
+      title: "打开源码",
       arguments: [this],
     };
     return item;

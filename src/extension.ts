@@ -14,6 +14,7 @@ import {
   upsertLaunchConfiguration,
 } from "./core/debug";
 import { collectSizeEntries, formatBytes } from "./core/sizes";
+import { findProjectSource } from "./core/sources";
 import { collectLockChecks } from "./core/versions";
 import {
   BoardInfo,
@@ -157,6 +158,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.setActiveEnv", node => setActiveFromNode(node));
   reg("embeddedEnv.pickActive", () => pickActive());
   reg("embeddedEnv.openIni", node => openIni(node));
+  reg("embeddedEnv.openSource", node => openSource(node));
   reg("embeddedEnv.openPath", node => openPath(node));
   reg("embeddedEnv.openCheckFile", node => openCheckFile(node));
   reg("embeddedEnv.checkUpdates", () => checkUpdates());
@@ -549,6 +551,23 @@ async function openIni(node: unknown): Promise<void> {
   else if (node instanceof EnvNode) iniPath = node.project.iniPath;
   if (!iniPath) return;
   const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(iniPath));
+  await vscode.window.showTextDocument(doc, { preview: false });
+}
+
+async function openSource(node: unknown): Promise<void> {
+  let project: ProjectModel | undefined;
+  if (node instanceof ProjectNode) project = node.project;
+  else if (node instanceof EnvNode) project = node.project;
+  if (!project) return;
+
+  const source = findProjectSource(project.dir);
+  if (!source) {
+    vscode.window.showInformationMessage(
+      `projects/${project.name} 的 src/ 下没有可打开的源码文件（.cpp/.c/.ino）。`
+    );
+    return;
+  }
+  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(source));
   await vscode.window.showTextDocument(doc, { preview: false });
 }
 

@@ -1,5 +1,10 @@
 # 更新日志
 
+## 0.10.1
+
+- 工程视图：**单击工程节点直接打开源码**（优先 `src/main.cpp`，否则第一个 `.cpp/.c/.ino`）
+- 新增「打开源码」命令；工程/环境右键菜单可用，`platformio.ini` 仍在右键菜单
+
 ## 0.10.0
 
 - 新增实验性「调试（Debug）」命令：ESP32 环境生成 `.vscode/launch.json`（cppdbg），可选启动 VS Code 调试会话

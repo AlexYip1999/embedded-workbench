@@ -2,7 +2,7 @@
   "name": "embedded-workbench",
   "displayName": "Embedded Workbench（统一嵌入式工作台）",
   "description": "把任意文件夹变成嵌入式工程目录：多工程/多板卡环境切换、串口扫描与芯片识别、构建烧录、缓存体积、版本锁定体检。",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "publisher": "local-dev",
   "license": "MIT",
   "author": "AlexYip1999",
@@ -220,6 +220,10 @@
         "title": "打开 platformio.ini"
       },
       {
+        "command": "embeddedEnv.openSource",
+        "title": "打开源码"
+      },
+      {
         "command": "embeddedEnv.openPath",
         "title": "在资源管理器中打开"
       },
@@ -297,6 +301,11 @@
           "group": "9_open@1"
         },
         {
+          "command": "embeddedEnv.openSource",
+          "when": "view == embeddedEnv.projects && viewItem == project",
+          "group": "9_open@0"
+        },
+        {
           "command": "embeddedEnv.setActiveEnv",
           "when": "view == embeddedEnv.projects && viewItem == env",
           "group": "1_run@1"
@@ -325,6 +334,11 @@
           "command": "embeddedEnv.debug",
           "when": "view == embeddedEnv.projects && viewItem == env",
           "group": "3_debug@1"
+        },
+        {
+          "command": "embeddedEnv.openSource",
+          "when": "view == embeddedEnv.projects && viewItem == env",
+          "group": "9_open@1"
         },
         {
           "command": "embeddedEnv.flashToPort",
