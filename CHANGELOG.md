@@ -1,5 +1,11 @@
 # 更新日志
 
+## 0.13.3
+
+- 清理：删除不再使用的 `listSerialPorts` 串口枚举代码（设备扫描已由 `ports.ts` 统一实现）
+- 清理：`install.ps1` 移除旧扩展 ID `local-dev.embedded-env-manager` 的历史迁移逻辑
+- 清理：`activationEvents` 去掉冗余的 `onCommand:*`（VS Code 1.74+ 会为 contributed commands 自动生成）
+
 ## 0.13.2
 
 - 恢复「版本」视图（PlatformIO / 各工程锁定状态），保留「版本体检」命令和刷新按钮

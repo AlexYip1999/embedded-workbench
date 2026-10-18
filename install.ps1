@@ -29,14 +29,6 @@ $vsix = Get-ChildItem $PSScriptRoot -Filter 'embedded-workbench-*.vsix' |
     Select-Object -First 1
 if (-not $vsix) { throw 'vsix not found' }
 
-# Project was renamed from embedded-env-manager; remove the old extension id if present.
-$oldId = 'local-dev.embedded-env-manager'
-$installed = @(& code --list-extensions 2>$null)
-if ($installed -contains $oldId) {
-    Write-Host "[ext] remove old extension id $oldId ..."
-    & code --uninstall-extension $oldId | Out-Null
-}
-
 Write-Host "[ext] install $($vsix.Name) ..."
 & code --install-extension $vsix.FullName --force
 if ($LASTEXITCODE -ne 0) { throw 'code --install-extension failed' }

@@ -82,31 +82,3 @@ export function runPio(
   });
 }
 
-export interface SerialPort {
-  port: string;
-  label: string;
-}
-
-export async function listSerialPorts(ctx: PioContext): Promise<SerialPort[]> {
-  const res = await runPio(ctx, ["device", "list", "--json-output"], 20000);
-  if (res.code !== 0) return [];
-  try {
-    const data = JSON.parse(res.stdout.trim() || "[]") as unknown;
-    const arr: unknown[] = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { serial?: unknown[] })?.serial)
-        ? (data as { serial: unknown[] }).serial
-        : [];
-    const out: SerialPort[] = [];
-    for (const raw of arr) {
-      const d = raw as Record<string, unknown>;
-      const port = String(d.port ?? d.device ?? "");
-      if (!port) continue;
-      const desc = String(d.description ?? d.hwid ?? "");
-      out.push({ port, label: desc ? `${port} — ${desc}` : port });
-    }
-    return out;
-  } catch {
-    return [];
-  }
-}
