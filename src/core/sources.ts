@@ -42,3 +42,36 @@ export function findProjectSource(projectDir: string): string | undefined {
 
   return findRecursive(srcDir);
 }
+
+function collectSources(dir: string, out: string[], depth: number): void {
+  if (depth > 6) return;
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectSources(full, out, depth + 1);
+    } else if (SOURCE_EXT.test(entry.name)) {
+      out.push(full);
+    }
+  }
+}
+
+/** All source files under src/ (main.* first, then alphabetical). */
+export function listProjectSources(projectDir: string): string[] {
+  const out: string[] = [];
+  collectSources(path.join(projectDir, "src"), out, 0);
+  const rank = (file: string): number => {
+    const index = PREFERRED_NAMES.indexOf(path.basename(file));
+    return index === -1 ? PREFERRED_NAMES.length : index;
+  };
+  return out.sort((a, b) => {
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return a.localeCompare(b);
+  });
+}

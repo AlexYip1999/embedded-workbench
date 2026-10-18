@@ -1,6 +1,8 @@
+import * as path from "path";
 import * as vscode from "vscode";
 import { EnvModel, ProjectModel } from "../core/repo";
 import { boardHint } from "../core/boards";
+import { listProjectSources } from "../core/sources";
 
 export interface ActiveRef {
   project: string;
@@ -27,7 +29,7 @@ export class ProjectNode {
     item.tooltip.appendMarkdown(`- 默认环境: \`${defaultEnv ?? "-"}\`\n`);
     item.tooltip.appendMarkdown(`- 当前环境: \`${this.activeEnv ?? "-"}\`\n`);
     item.tooltip.appendMarkdown("- 点击打开源码（`src/main.cpp`）\n");
-    item.tooltip.appendMarkdown("- 右键可打开 `platformio.ini`");
+    item.tooltip.appendMarkdown("- 展开后可看到「源码」和板卡环境");
     item.contextValue = "project";
     item.iconPath = new vscode.ThemeIcon("circuit-board");
     item.command = {
@@ -35,6 +37,60 @@ export class ProjectNode {
       title: "打开源码",
       arguments: [this],
     };
+    return item;
+  }
+}
+
+/** Group node that lists the project sources under `src/`. */
+export class SourceGroupNode {
+  public readonly kind = "sourceGroup";
+  constructor(public readonly project: ProjectModel) {}
+
+  toTreeItem(): vscode.TreeItem {
+    const files = listProjectSources(this.project.dir);
+    const item = new vscode.TreeItem(
+      "源码",
+      files.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None
+    );
+    item.description = files.length > 0 ? `${files.length} 个文件` : "无";
+    item.contextValue = "sourceGroup";
+    item.iconPath = new vscode.ThemeIcon("file-code");
+    item.tooltip = path.join(this.project.dir, "src");
+    return item;
+  }
+}
+
+export class SourceFileNode {
+  public readonly kind = "sourceFile";
+  constructor(
+    public readonly project: ProjectModel,
+    public readonly filePath: string
+  ) {}
+
+  toTreeItem(): vscode.TreeItem {
+    const srcDir = path.join(this.project.dir, "src");
+    const relative = path.relative(srcDir, this.filePath) || path.basename(this.filePath);
+    const item = new vscode.TreeItem(relative, vscode.TreeItemCollapsibleState.None);
+    item.contextValue = "sourceFile";
+    item.iconPath = new vscode.ThemeIcon("file-code");
+    item.tooltip = this.filePath;
+    item.command = {
+      command: "vscode.open",
+      title: "打开源码",
+      arguments: [vscode.Uri.file(this.filePath)],
+    };
+    return item;
+  }
+}
+
+export class SourceHintNode {
+  public readonly kind = "sourceHint";
+  constructor(public readonly message: string) {}
+
+  toTreeItem(): vscode.TreeItem {
+    const item = new vscode.TreeItem(this.message, vscode.TreeItemCollapsibleState.None);
+    item.contextValue = "sourceHint";
+    item.iconPath = new vscode.ThemeIcon("info");
     return item;
   }
 }
@@ -73,7 +129,12 @@ export class EnvNode {
   }
 }
 
-export type ProjectTreeItem = ProjectNode | EnvNode;
+export type ProjectTreeItem =
+  | ProjectNode
+  | SourceGroupNode
+  | SourceFileNode
+  | SourceHintNode
+  | EnvNode;
 
 export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem> {
   private readonly emitter = new vscode.EventEmitter<ProjectTreeItem | undefined | void>();
@@ -100,9 +161,17 @@ export class ProjectsProvider implements vscode.TreeDataProvider<ProjectTreeItem
     }
     if (element instanceof ProjectNode) {
       const activeProject = state.active?.project === element.project.name;
-      return element.project.envs.map(
+      const envNodes = element.project.envs.map(
         env => new EnvNode(element.project, env, activeProject && state.active?.env === env.name)
       );
+      return [new SourceGroupNode(element.project), ...envNodes];
+    }
+    if (element instanceof SourceGroupNode) {
+      const files = listProjectSources(element.project.dir);
+      if (files.length === 0) {
+        return [new SourceHintNode("src/ 下没有源码文件")];
+      }
+      return files.map(file => new SourceFileNode(element.project, file));
     }
     return [];
   }

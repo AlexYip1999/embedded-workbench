@@ -3,7 +3,7 @@
 把任意文件夹变成嵌入式工程目录：工程、设备、缓存、版本都在这个面板里管理，
 环境（Python + PlatformIO）也由扩展自己创建，不需要脚本或仓库模板。
 
-- **工程**视图：扫描 `projects/*/platformio.ini`，展开看到每块板卡的环境（board/flash 提示）；**单击工程节点打开源码**，右键可打开 `platformio.ini`、删除工程等
+- **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可打开 `platformio.ini`、删除工程等
 - **设备**视图：扫描串口，显示 COM 口、描述、硬件 ID（VID/PID）和 USB 桥接芯片（CH340、CP210x、FTDI…）；右键「识别芯片（esptool）」可读出目标 MCU 型号（如 `ESP8266EX`）、Flash 大小、MAC 地址
 - **缓存**视图：`.platformio/packages`、`platforms`、`.venv`、各工程 `.pio` 的体积
 - **版本**视图：PlatformIO 版本（插件锁定 6.2.0）、platform/lib_deps 是否锁版本

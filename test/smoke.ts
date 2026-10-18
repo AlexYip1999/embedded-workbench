@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { findRepoRoot, scanProjects } from "../src/core/repo";
-import { findProjectSource } from "../src/core/sources";
+import { findProjectSource, listProjectSources } from "../src/core/sources";
 import { locatePio } from "../src/core/pio";
 import { chipFromHwid, parseVidPid, scanSerialDevices } from "../src/core/ports";
 import { parseEsptoolOutput } from "../src/core/esptool";
@@ -253,6 +253,13 @@ async function main(): Promise<void> {
     assert((findProjectSource(tmpSrc) ?? "").endsWith("other.cpp"), "finds first source");
     await fs.promises.writeFile(path.join(tmpSrc, "src", "main.cpp"), "");
     assert((findProjectSource(tmpSrc) ?? "").endsWith("main.cpp"), "prefers main.cpp");
+
+    await fs.promises.mkdir(path.join(tmpSrc, "src", "sub"), { recursive: true });
+    await fs.promises.writeFile(path.join(tmpSrc, "src", "a.cpp"), "");
+    await fs.promises.writeFile(path.join(tmpSrc, "src", "sub", "z.cpp"), "");
+    const listed = listProjectSources(tmpSrc);
+    assert(listed.length === 4, "lists source files recursively");
+    assert(listed[0].endsWith("main.cpp"), "main.cpp first in source list");
   } finally {
     await fs.promises.rm(tmpSrc, { recursive: true, force: true });
   }
