@@ -6,6 +6,7 @@
 - **工程**视图：扫描 `projects/*/platformio.ini`，展开后有「源码」分组（列出 `src/` 下源码，点击直接打开）和板卡环境（board/flash 提示）；单击工程节点打开入口源码，右键可删除工程、生成调试配置等；`platformio.ini` 用命令面板打开
 - **设备**视图：扫描串口，显示 COM 口、描述、硬件 ID（VID/PID）和 USB 桥接芯片（CH340、CP210x、FTDI…）；右键「识别芯片（esptool）」可读出目标 MCU 型号（如 `ESP8266EX`）、Flash 大小、MAC 地址
 - **缓存**视图：`.platformio/packages`、`platforms`、`.venv`、各工程 `.pio` 的体积
+- **版本**视图：PlatformIO 版本（插件锁定 6.2.0）、platform/lib_deps 是否锁版本
 - **命令**：初始化环境 / 构建 / 烧录 / 监视串口 / 清理 / 切换当前环境 / 检查依赖更新 / 版本体检
 - **状态栏**：当前工程环境 + PlatformIO 版本，点击可切换
 

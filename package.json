@@ -2,7 +2,7 @@
   "name": "embedded-workbench",
   "displayName": "Embedded Workbench（统一嵌入式工作台）",
   "description": "把任意文件夹变成嵌入式工程目录：多工程/多板卡环境切换、串口扫描与芯片识别、构建烧录、缓存体积、版本锁定体检。",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "publisher": "local-dev",
   "license": "MIT",
   "author": "AlexYip1999",
@@ -50,6 +50,7 @@
     "onView:embeddedEnv.projects",
     "onView:embeddedEnv.devices",
     "onView:embeddedEnv.cache",
+    "onView:embeddedEnv.versions",
     "onCommand:embeddedEnv.bootstrap",
     "onCommand:embeddedEnv.newProject",
     "onCommand:embeddedEnv.newProjectForDevice",
@@ -80,6 +81,10 @@
         {
           "id": "embeddedEnv.cache",
           "name": "缓存"
+        },
+        {
+          "id": "embeddedEnv.versions",
+          "name": "版本"
         }
       ]
     },
@@ -95,6 +100,10 @@
       {
         "view": "embeddedEnv.cache",
         "contents": "首次构建后，这里会显示 PlatformIO 缓存、Python 环境和构建产物的体积。\n[计算缓存体积](command:embeddedEnv.computeSizes)"
+      },
+      {
+        "view": "embeddedEnv.versions",
+        "contents": "版本体检会检查 PlatformIO 版本、工程 platform 与 lib_deps 是否锁定。\n[刷新](command:embeddedEnv.refresh)"
       }
     ],
     "commands": [
@@ -224,6 +233,10 @@
         "title": "在资源管理器中打开"
       },
       {
+        "command": "embeddedEnv.openCheckFile",
+        "title": "打开相关文件"
+      },
+      {
         "command": "embeddedEnv.checkVersions",
         "title": "版本体检",
         "icon": "$(checklist)"
@@ -242,7 +255,7 @@
         },
         {
           "command": "embeddedEnv.refresh",
-          "when": "view == embeddedEnv.projects || view == embeddedEnv.cache",
+          "when": "view == embeddedEnv.projects || view == embeddedEnv.cache || view == embeddedEnv.versions",
           "group": "navigation@1"
         },
         {
@@ -360,6 +373,11 @@
         {
           "command": "embeddedEnv.openPath",
           "when": "view == embeddedEnv.cache && viewItem == cacheItem",
+          "group": "9_open@1"
+        },
+        {
+          "command": "embeddedEnv.openCheckFile",
+          "when": "view == embeddedEnv.versions && viewItem == versionCheck",
           "group": "9_open@1"
         }
       ]

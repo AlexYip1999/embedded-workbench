@@ -34,6 +34,7 @@ import {
 import { CacheEntryNode, CacheProvider } from "./trees/cacheTree";
 import { DevicesProvider, SerialDeviceNode } from "./trees/devicesTree";
 import { EnvNode, ProjectNode, ProjectsProvider, ProjectsState } from "./trees/projectsTree";
+import { LockNode, VersionsProvider } from "./trees/versionsTree";
 import { StatusBar } from "./statusbar";
 
 interface Target {
@@ -52,6 +53,7 @@ let out: vscode.OutputChannel;
 let projectsProvider: ProjectsProvider;
 let devicesProvider: DevicesProvider;
 let cacheProvider: CacheProvider;
+let versionsProvider: VersionsProvider;
 let statusBar: StatusBar;
 let buildTerminal: vscode.Terminal | undefined;
 let buildTerminalCwd: string | undefined;
@@ -85,6 +87,7 @@ export function activate(context: vscode.ExtensionContext): void {
   projectsProvider = new ProjectsProvider(() => state);
   devicesProvider = new DevicesProvider();
   cacheProvider = new CacheProvider();
+  versionsProvider = new VersionsProvider();
   statusBar = new StatusBar();
   context.subscriptions.push(statusBar);
 
@@ -98,6 +101,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.window.createTreeView("embeddedEnv.cache", {
       treeDataProvider: cacheProvider,
+    }),
+    vscode.window.createTreeView("embeddedEnv.versions", {
+      treeDataProvider: versionsProvider,
     })
   );
 
@@ -156,6 +162,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.openSource", node => openSource(node));
   reg("embeddedEnv.openPath", node => openPath(node));
   reg("embeddedEnv.checkVersions", () => checkVersions());
+  reg("embeddedEnv.openCheckFile", node => openCheckFile(node));
   reg("embeddedEnv.checkUpdates", () => checkUpdates());
 }
 
@@ -183,9 +190,24 @@ async function refreshAll(): Promise<void> {
     const version = await readPioVersion();
     if (version) statusBar.setPioVersion(version);
     statusBar.update(state, pioCtx);
+
+    try {
+      versionsProvider.setChecks(await collectLockChecks(repoRoot, pioCtx, state.projects));
+    } catch (err) {
+      out.appendLine(`[error] 版本检查失败: ${String(err)}`);
+    }
+
     void refreshDevices();
   } else if (!workspaceReady) {
     devicesProvider.setNotice("当前工作区不是嵌入式工程目录（缺少 projects/），未扫描串口。");
+    versionsProvider.setChecks([
+      {
+        id: "workspace",
+        label: "工作区",
+        detail: "缺少 projects/ 目录，不是嵌入式工作区",
+        status: "info",
+      },
+    ]);
   }
   void computeSizes(false);
 }
@@ -557,6 +579,17 @@ async function openPath(node: unknown): Promise<void> {
     return;
   }
   await vscode.commands.executeCommand("revealFileInOS", vscode.Uri.file(node.entry.path));
+}
+
+async function openCheckFile(node: unknown): Promise<void> {
+  if (!(node instanceof LockNode)) return;
+  const file = node.check.file;
+  if (!file || !fs.existsSync(file)) {
+    vscode.window.showInformationMessage("没有可打开的相关文件。");
+    return;
+  }
+  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
+  await vscode.window.showTextDocument(doc, { preview: true });
 }
 
 async function checkVersions(): Promise<void> {
