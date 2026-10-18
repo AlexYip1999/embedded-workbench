@@ -1198,6 +1198,10 @@ async function generateDebugConfigs(): Promise<void> {
   let skipped = 0;
   for (const project of state.projects) {
     for (const env of project.envs) {
+      if (!platformSupportsDebug(env.platform)) {
+        skipped++;
+        continue;
+      }
       const firmwareElf = path.join(project.dir, ".pio", "build", env.name, "firmware.elf");
       if (!fs.existsSync(firmwareElf)) {
         skipped++;
@@ -1208,10 +1212,7 @@ async function generateDebugConfigs(): Promise<void> {
         skipped++;
         continue;
       }
-      const supported = platformSupportsDebug(env.platform);
-      const name = supported
-        ? `PIO Debug · ${project.name} / ${env.name}`
-        : `PIO Debug (ESP8266 · 无 JTAG) · ${project.name} / ${env.name}`;
+      const name = `PIO Debug · ${project.name} / ${env.name}`;
       const config = buildCppdbgConfig({
         name,
         projectDir: project.dir,
@@ -1229,8 +1230,8 @@ async function generateDebugConfigs(): Promise<void> {
 
   out.appendLine(`[debug] generated ${generated} launch config(s), skipped ${skipped}`);
   vscode.window.showInformationMessage(
-    `已生成 ${generated} 条调试配置到 .vscode/launch.json（${skipped} 个环境缺少 firmware.elf，已跳过）。\n` +
-      "在「运行和调试」下拉框里选择即可；ESP8266 的配置没有 JTAG，连接会失败（预期）。"
+    `已生成 ${generated} 条调试配置到 .vscode/launch.json（${skipped} 个环境跳过：非 ESP32 或缺少 firmware.elf）。\n` +
+      "在「运行和调试」下拉框里选择即可。"
   );
 }
 
@@ -1241,17 +1242,13 @@ async function debugTarget(node: unknown): Promise<void> {
   const { project, env } = target;
 
   if (!platformSupportsDebug(env.platform)) {
-    const choice = await vscode.window.showWarningMessage(
+    vscode.window.showWarningMessage(
       [
         `当前环境 platform = ${env.platform ?? "(未设置)"}，不支持断点调试。`,
-        "ESP8266 没有 JTAG，PlatformIO 也不提供调试工具。",
-        "可以生成一条实验性配置放进运行和调试下拉框（连接会失败，仅作占位/演示）。",
-      ].join("\n"),
-      { modal: true },
-      "仍生成调试配置",
-      "取消"
+        "ESP8266 没有 JTAG，PlatformIO 也不提供调试工具，因此不会生成调试配置。",
+        "需要断点调试的话，建议换 ESP32-C3 / S3（内置 USB-JTAG）。",
+      ].join("\n")
     );
-    if (choice === "仍生成调试配置") await generateDebugConfigs();
     return;
   }
 
