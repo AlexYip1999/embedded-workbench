@@ -21,7 +21,12 @@ import {
   scaffoldProject,
   validateProjectName,
 } from "../src/core/scaffold";
-import { buildCppdbgConfig, platformSupportsDebug, upsertLaunchConfiguration } from "../src/core/debug";
+import {
+  buildCppdbgConfig,
+  findGdbPath,
+  platformSupportsDebug,
+  upsertLaunchConfiguration,
+} from "../src/core/debug";
 import { collectLockChecks } from "../src/core/versions";
 import { collectSizeEntries, formatBytes } from "../src/core/sizes";
 import { parseIni, envValue, values } from "../src/core/ini";
@@ -226,6 +231,26 @@ async function main(): Promise<void> {
   assert(debugCfg.type === "cppdbg", "builds cppdbg config");
   assert(debugCfg.miDebuggerServerAddress === "localhost:3333", "defaults gdb server address");
   assert(String(debugCfg.program).endsWith("firmware.elf"), "points at firmware.elf");
+
+  const tmpGdb = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-gdb-"));
+  try {
+    const esp8266Bin = path.join(tmpGdb, "packages", "toolchain-xtensa", "bin");
+    const esp32Bin = path.join(tmpGdb, "packages", "toolchain-xtensa-esp32", "bin");
+    await fs.promises.mkdir(esp8266Bin, { recursive: true });
+    await fs.promises.mkdir(esp32Bin, { recursive: true });
+    await fs.promises.writeFile(path.join(esp8266Bin, "xtensa-lx106-elf-gdb.exe"), "");
+    await fs.promises.writeFile(path.join(esp32Bin, "xtensa-esp32-elf-gdb.exe"), "");
+    assert(
+      (findGdbPath(tmpGdb, "espressif8266@4.2.1") ?? "").includes("lx106"),
+      "picks lx106 gdb for ESP8266"
+    );
+    assert(
+      (findGdbPath(tmpGdb, "espressif32@6.7.0") ?? "").includes("esp32-elf-gdb"),
+      "picks esp32 gdb for ESP32"
+    );
+  } finally {
+    await fs.promises.rm(tmpGdb, { recursive: true, force: true });
+  }
 
   const tmpDebug = await fs.promises.mkdtemp(path.join(os.tmpdir(), "envgui-debug-"));
   try {

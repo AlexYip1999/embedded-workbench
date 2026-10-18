@@ -152,6 +152,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
   reg("embeddedEnv.monitorPort", node => runTargetToPort(node, "monitor"));
   reg("embeddedEnv.flashMonitorPort", node => runTargetToPort(node, "flashMonitor"));
   reg("embeddedEnv.debug", node => debugTarget(node));
+  reg("embeddedEnv.generateDebugConfigs", () => generateDebugConfigs());
   reg("embeddedEnv.copyPortName", node => copyPortName(node));
   reg("embeddedEnv.clean", node => runTarget(node, "clean"));
   reg("embeddedEnv.cleanBuild", node => cleanBuild(node));
@@ -1192,6 +1193,54 @@ async function attemptDeleteProject(projectDir: string): Promise<string | undefi
  * - starts the VS Code debug session (OpenOCD server is NOT started automatically,
  *   so connecting may fail until a debug server is running on localhost:3333)
  */
+/**
+ * Write launch configurations for every already-built environment so they show
+ * up in the "Run and Debug" dropdown. ESP32 gets a real cppdbg config; ESP8266
+ * gets an experimental placeholder (no JTAG, connection will fail).
+ */
+async function generateDebugConfigs(): Promise<void> {
+  if (!repoRoot || !pioCtx) return;
+
+  let generated = 0;
+  let skipped = 0;
+  for (const project of state.projects) {
+    for (const env of project.envs) {
+      const firmwareElf = path.join(project.dir, ".pio", "build", env.name, "firmware.elf");
+      if (!fs.existsSync(firmwareElf)) {
+        skipped++;
+        continue;
+      }
+      const gdbPath = findGdbPath(pioCtx.coreDir, env.platform);
+      if (!gdbPath) {
+        skipped++;
+        continue;
+      }
+      const supported = platformSupportsDebug(env.platform);
+      const name = supported
+        ? `PIO Debug · ${project.name} / ${env.name}`
+        : `PIO Debug (ESP8266 · 无 JTAG) · ${project.name} / ${env.name}`;
+      const config = buildCppdbgConfig({
+        name,
+        projectDir: project.dir,
+        firmwareElf,
+        gdbPath,
+      });
+      const result = await upsertLaunchConfiguration(repoRoot, config);
+      if (result.skipped) {
+        vscode.window.showWarningMessage(`未修改 launch.json：${result.skipped}`);
+        return;
+      }
+      generated++;
+    }
+  }
+
+  out.appendLine(`[debug] generated ${generated} launch config(s), skipped ${skipped}`);
+  vscode.window.showInformationMessage(
+    `已生成 ${generated} 条调试配置到 .vscode/launch.json（${skipped} 个环境缺少 firmware.elf，已跳过）。\n` +
+      "在「运行和调试」下拉框里选择即可；ESP8266 的配置没有 JTAG，连接会失败（预期）。"
+  );
+}
+
 async function debugTarget(node: unknown): Promise<void> {
   if (!pioCtx || !repoRoot) return;
   const target = await pickTarget(node);
@@ -1199,13 +1248,17 @@ async function debugTarget(node: unknown): Promise<void> {
   const { project, env } = target;
 
   if (!platformSupportsDebug(env.platform)) {
-    vscode.window.showWarningMessage(
+    const choice = await vscode.window.showWarningMessage(
       [
         `当前环境 platform = ${env.platform ?? "(未设置)"}，不支持断点调试。`,
         "ESP8266 没有 JTAG，PlatformIO 也不提供调试工具。",
-        "需要断点调试的话，建议换 ESP32-C3 / S3（内置 USB-JTAG）。",
-      ].join("\n")
+        "可以生成一条实验性配置放进运行和调试下拉框（连接会失败，仅作占位/演示）。",
+      ].join("\n"),
+      { modal: true },
+      "仍生成调试配置",
+      "取消"
     );
+    if (choice === "仍生成调试配置") await generateDebugConfigs();
     return;
   }
 
@@ -1219,7 +1272,7 @@ async function debugTarget(node: unknown): Promise<void> {
     return;
   }
 
-  const gdbPath = findGdbPath(pioCtx.coreDir);
+  const gdbPath = findGdbPath(pioCtx.coreDir, env.platform);
   if (!gdbPath) {
     vscode.window.showErrorMessage("未找到 GDB（PlatformIO 工具链未安装？先构建一次再试）。");
     return;

@@ -16,7 +16,7 @@ export function platformSupportsDebug(platformSpec?: string): boolean {
 }
 
 /** Locate a gdb executable inside the project-local PlatformIO toolchains. */
-export function findGdbPath(coreDir: string): string | undefined {
+export function findGdbPath(coreDir: string, platformSpec?: string): string | undefined {
   const packagesDir = path.join(coreDir, "packages");
   let entries: fs.Dirent[] = [];
   try {
@@ -41,7 +41,20 @@ export function findGdbPath(coreDir: string): string | undefined {
       }
     }
   }
-  return candidates.sort()[0];
+
+  const spec = (platformSpec ?? "").toLowerCase();
+  const match = (candidate: string): boolean => {
+    const lower = candidate.toLowerCase();
+    if (spec.includes("espressif32")) return lower.includes("esp32");
+    if (spec.includes("espressif8266")) return lower.includes("lx106") || lower.includes("8266");
+    if (spec.includes("ststm32") || spec.includes("atmelsam") || spec.includes("raspberrypi")) {
+      return lower.includes("arm-none-eabi") || lower.includes("riscv");
+    }
+    return true;
+  };
+
+  const preferred = candidates.filter(match);
+  return (preferred.length > 0 ? preferred : candidates).sort()[0];
 }
 
 export function buildCppdbgConfig(input: DebugConfigInput): Record<string, unknown> {
