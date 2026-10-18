@@ -1,5 +1,10 @@
 # 更新日志
 
+## 0.14.1
+
+- 明确边界：插件仓库只包含插件源码/配置，`projects/`、`.venv/`、`.platformio/` 属于被管理的嵌入式工作区
+- `.gitignore` / `.vscodeignore` 增加这三个目录的防御性忽略，并补充 ARCHITECTURE 说明
+
 ## 0.14.0
 
 - 重构插件结构：`extension.ts` 只负责激活，新增 `workbench.ts`（状态/编排）、`commands.ts`（命令注册表）、`wizards.ts`（向导）、`features.ts`（功能处理器）

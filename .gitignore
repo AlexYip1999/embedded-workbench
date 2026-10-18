@@ -5,6 +5,11 @@ dist/
 *.vsix
 *.log
 
+# managed embedded workspace (never part of the extension repo)
+.venv/
+.platformio/
+projects/
+
 # editor / OS
 .vscode/
 .idea/

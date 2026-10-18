@@ -8,6 +8,11 @@ install.ps1
 **/*.map
 *.vsix
 .gitignore
+.git/**
+.vscode/**
+.venv/**
+.platformio/**
+projects/**
 .github/**
 .editorconfig
 .prettierrc.json

@@ -4,6 +4,22 @@ Embedded Workbench is a thin VS Code front-end over a project-local PlatformIO
 environment. The extension never installs global tools; everything lives in the
 opened workspace folder (`.venv`, `.platformio`, `projects/`).
 
+## Repository vs managed workspace
+
+This repository contains **only the extension** (source, tests, configs, media).
+The following directories belong to the *embedded workspace that the extension
+manages* and must never be committed here:
+
+```
+<workspace>/
+├── projects/       # PlatformIO firmware projects
+├── .venv/          # project-local Python + PlatformIO
+└── .platformio/    # project-local PlatformIO cache
+```
+
+`.gitignore` / `.vscodeignore` both exclude them defensively; the extension only
+ever operates inside the opened workspace folder.
+
 ## Module layout
 
 ```
