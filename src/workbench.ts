@@ -298,7 +298,7 @@ export class Workbench implements vscode.Disposable {
 
     if (action === "flashMonitor") {
       const port = explicitPort ?? (await this.pickPort());
-      const baud = vscode.workspace.getConfiguration("embeddedEnv").get<number>("baud", 115200);
+      const baud = this.monitorBaud(target);
       const uploadArgs = ["run", "-e", target.env.name, "-t", "upload"];
       if (port) uploadArgs.push("--upload-port", port);
       const monitorArgs = ["device", "monitor", "-b", String(baud)];
@@ -339,8 +339,15 @@ export class Workbench implements vscode.Disposable {
     await this.runTarget(undefined, action, node.device.port);
   }
 
+  /** Honour the project's monitor_speed when present, else the extension setting. */
+  private monitorBaud(target?: Target): number {
+    const configured = vscode.workspace.getConfiguration("embeddedEnv").get<number>("baud", 115200);
+    const envSpeed = Number(target?.env.monitorSpeed);
+    return Number.isFinite(envSpeed) && envSpeed > 0 ? envSpeed : configured;
+  }
+
   private async startMonitor(target: Target, explicitPort?: string): Promise<void> {
-    const baud = vscode.workspace.getConfiguration("embeddedEnv").get<number>("baud", 115200);
+    const baud = this.monitorBaud(target);
     const port = explicitPort ?? (await this.pickPort());
     const args = ["device", "monitor", "-b", String(baud)];
     if (port) args.push("-p", port);
